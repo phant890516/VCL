@@ -1,0 +1,28 @@
+{
+  // 1. GitHub Copilot 連携設定
+  "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+  "github.copilot.instructions": ".github/copilot-instructions.md",
+  "github.copilot.chat.codeGeneration.instructions": [
+    {
+      "file": ".github/copilot-instructions.md"
+    }
+  ],
+  // 2. Node.js 開発向け設定
+  "editor.defaultFormatter": "esbenp.prettier-vscode", // 整形ツールPrettierを固定
+  "editor.formatOnSave": true, // 保存時に自動整形
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit", // インポートの自動整理
+    "source.fixAll.eslint": "explicit" // 保存時にLintエラーを自動修正
+  },
+  // 3. Mac/Windows環境差の吸収
+  "files.eol": "\n", // 改行コードをLFに固定
+  "files.insertFinalNewline": true, // ファイル末尾の空行を強制
+  "files.trimTrailingWhitespace": true, // 行末の不要なスペースを削除
+
+  // 4. JavaScript 補完強化
+  "javascript.suggest.autoImports": true,
+  "javascript.updateImportsOnFileMove.enabled": "always",
+  // 4. 三層アーキテクチャの視認性向上
+  "explorer.compactFolders": false // フォルダを階層表示（三層が見やすくな
+
+}

@@ -1,0 +1,53 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VCL - Virtual Chemistry Lab</title>
+  </head>
+  <body>
+    <!-- 1. 3D描画領域。ここにはjavascriptで描画します -->
+    <div id="canvas-container"></div>
+
+    <!-- 2. UIレイヤー -->
+    <div id="ui-layer">
+      <nav class="sidebar pointer-events-auto" id="static-sidebar">
+        <ul class="nav-list">
+          <li class="nav-item" data-id="home">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">ホーム</span>
+          </li>
+          <li class="nav-item" data-id="quest">
+            <span class="nav-icon">🧪</span>
+            <span class="nav-label">クエスト</span>
+          </li>
+          <li class="nav-item" data-id="idea">
+            <span class="nav-icon">💡</span>
+            <span class="nav-label">ひらめき</span>
+          </li>
+          <li class="nav-item" data-id="live">
+            <span class="nav-icon">📡</span>
+            <span class="nav-label">ライブ</span>
+          </li>
+          <li class="nav-item" data-id="trophy">
+            <span class="nav-icon">🏆</span>
+            <span class="nav-label">トロフィー</span>
+          </li>
+          <li class="nav-item" data-id="setting">
+            <span class="nav-icon">👤</span>
+            <span class="nav-label">設定</span>
+          </li>
+        </ul>
+        <div class="logo-area">
+          <div class="logo-title">VCL</div>
+          <div class="logo-subtitle">VIRTUAL CHEMISTRY LAB</div>
+        </div>
+      </nav>
+
+      <!-- メインコンテンツ置き場（ログインフォームなど） -->
+      <div id="content-root" class="pointer-events-auto"></div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

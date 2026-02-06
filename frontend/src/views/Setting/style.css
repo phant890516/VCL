@@ -1,0 +1,148 @@
+.setting-container {
+    padding: 30px;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.profile-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 20px;
+}
+
+.avatar {
+    width: 70px;
+    height: 70px;
+    background: #6272a4;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+}
+
+.setting-title {
+    border: none;
+    margin-bottom: 20px;
+}
+
+.profile-info {
+    flex-grow: 1;
+}
+
+.profile-name {
+    margin: 0;
+    font-size: 1.5em;
+}
+
+.profile-meta {
+    margin: 5px 0 0;
+    color: #aaa;
+}
+
+.profile-edit-btn {
+    padding: 8px 20px;
+    font-size: 0.9em;
+}
+
+.setting-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.section-title-app {
+    margin-top: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+    color: #8be9fd;
+}
+
+.status-on {
+    color: #00e676;
+}
+
+.status-link {
+    color: #aaa;
+    font-size: 0.9em;
+    cursor: pointer;
+}
+
+.security-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.section-title-security {
+    margin-top: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+    color: #ff79c6;
+}
+
+.security-btn {
+    text-align: left;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.logout-area {
+    margin-top: auto;
+    padding-top: 20px;
+}
+
+.logout-btn {
+    width: 100%;
+    background: #444;
+}
+
+.danger-title {
+    margin-top: 0;
+    color: #ff5555;
+}
+
+.danger-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.danger-desc {
+    margin: 0;
+    font-size: 0.9em;
+    color: #ffcccc;
+}
+
+.setting-section {
+    background: var(--glass-bg, rgba(255, 255, 255, 0.1));
+    border: var(--glass-border, 1px solid rgba(255, 255, 255, 0.2));
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.setting-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.danger-zone {
+    border: 1px solid #ff5555;
+    background: rgba(255, 85, 85, 0.1);
+}
+
+.btn-danger {
+    background: #ff5555;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+}

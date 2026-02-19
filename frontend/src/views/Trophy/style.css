@@ -1,49 +1,91 @@
 .trophy-container {
-    padding: 30px;
-    width: 100%;
-    height: 100%;
+    padding: 40px;
+    width: calc(100% - 60px);
+    height: calc(100% - 60px);
+    margin: 30px;
     overflow-y: auto;
     box-sizing: border-box;
+    color: #333;
+    background-color: #ffffff !important; /* Force solid white */
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    position: relative;
+    z-index: 10;
 }
 
 .trophy-item {
-    background: var(--glass-bg, rgba(255, 255, 255, 0.1));
-    border: var(--glass-border, 1px solid rgba(255, 255, 255, 0.2));
-    padding: 15px;
-    margin-bottom: 10px;
-    border-radius: 10px;
+    background-color: #ffffff !important;
+    border: 1px solid #eee; /* Added border for contrast on white */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 16px;
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 25px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+    z-index: 11;
+}
+
+.trophy-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
 }
 
 .trophy-icon {
-    font-size: 2.5em;
+    font-size: 3em;
+    min-width: 60px;
+    text-align: center;
+}
+
+.trophy-content {
+    flex-grow: 1;
 }
 
 .trophy-title-text {
-    font-size: 1.1em;
-    color: #ffd700;
+    font-size: 1.3em;
+    color: #2c3e50;
+    font-weight: 800;
+    margin-bottom: 5px;
+    display: block;
 }
 
 .trophy-desc {
-    color: #aaa;
+    color: #7f8c8d;
+    font-size: 0.95em;
+    line-height: 1.5;
 }
 
 .trophy-date {
-    color: #00e676;
-    font-size: 0.8em;
+    color: #00b894;
+    font-size: 0.85em;
+    font-weight: bold;
+    background: #e0f2f1;
+    padding: 4px 10px;
+    border-radius: 12px;
+    white-space: nowrap;
 }
 
 .trophy-item-locked {
-    opacity: 0.7;
+    background: #f1f2f6;
+    /* Removed opacity to prevent transparency issues */
+    /* opacity: 0.8; */
+    color: #999;
+    box-shadow: none;
 }
 
 .trophy-icon-locked {
     filter: grayscale(100%);
+    /* Removed opacity */
+    color: #b0c4de;
 }
 
 .trophy-status-locked {
-    color: #888;
-    font-size: 0.8em;
+    color: #999;
+    font-size: 0.9em;
+    font-weight: bold;
+    background: #dfe6e9;
+    padding: 4px 10px;
+    border-radius: 12px;
 }

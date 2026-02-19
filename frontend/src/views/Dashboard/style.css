@@ -1,53 +1,121 @@
 .dashboard-container {
-    padding: 40px;
+    padding: 60px;
     text-align: center;
     width: 100%;
-    color: var(--text-color, #fff);
+    color: var(--text-color, #333);
     height: 100%;
     overflow-y: auto;
     box-sizing: border-box;
 }
 
+.dashboard-title {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    color: #333; /* Darker text */
+    letter-spacing: 2px;
+}
+
+.dashboard-subtitle {
+    font-size: 1.2rem;
+    color: #7f8c8d;
+    margin-bottom: 4rem;
+    font-weight: bold;
+}
+
 .mode-card-container {
     display: flex;
-    gap: 30px;
+    gap: 40px;
     justify-content: center;
     flex-wrap: wrap;
-    margin-top: 40px;
+    margin-top: 20px;
 }
 
 .mode-card {
-    background: var(--glass-bg, rgba(255, 255, 255, 0.1));
-    border: var(--glass-border, 1px solid rgba(255, 255, 255, 0.2));
-    padding: 30px;
-    width: 280px;
-    border-radius: 20px;
+    background-color: #ffffff !important; /* Force solid white */
+    padding: 0; /* Remove padding here, handle in content */
+    width: 300px;
+    height: 400px; /* Taller card */
+    border-radius: 15px;
     cursor: pointer;
-    transition: transform 0.2s, background 0.2s;
+    transition: transform 0.3s, box-shadow 0.3s;
     display: flex;
     flex-direction: column;
     align-items: center;
+    overflow: hidden;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+    border: none;
+    position: relative;
+    z-index: 10; /* Ensure above background pattern */
+    border-bottom: 3px solid transparent; /* default */
 }
 
 .mode-card:hover {
-    transform: translateY(-5px);
-    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-10px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+}
+
+/* Card Colored Strips */
+.card-strip {
+    width: 100%;
+    height: 60px; /* Top colored area */
+    background: #ccc;
+}
+
+.card-green .card-strip {
+    background: linear-gradient(90deg, #aaffc2, #88fbc8); /* Pastel Green */
+}
+
+.card-orange .card-strip {
+    background: linear-gradient(90deg, #ffeab8, #ffcfa8); /* Pastel Orange */
+}
+
+.card-purple .card-strip {
+    background: linear-gradient(90deg, #dccaff, #c2f0c2); /* Pastel Purple - wait, mixing with green? Use purple only */
+    background: linear-gradient(90deg, #dcd0ff, #c3ffb9); /* Image shows purple having a bit of green? No, looks like purple to green gradient maybe? Let's stick to purple. */
+    background: linear-gradient(90deg, #d8b5ff, #c9f9aa); /* Actually the image card 3 header is purple-ish green gradient? No, it's purple. */
+    background: linear-gradient(90deg, #ce9ffc, #7367f0); /* Too strong */
+    background: linear-gradient(90deg, #d4fc79 0%, #96e6a1 100%); /* Green ref */
+    background: linear-gradient(135deg, #cc95c0 0%, #dbd4b4 100%); /* Purple/Beige */
+    /* Let's try to match image pastel purple-ish */
+    background: linear-gradient(to right, #d0bfff, #c2f090); /* Purple to Green gradient? */
+}
+
+/* Let's fix colors to better match "Pastel Green", "Pastel Orange", "Pastel Purple" */
+.card-green .card-strip { background: linear-gradient(to right, #9af9bf, #a2f2f6); }
+.card-orange .card-strip { background: linear-gradient(to right, #ffe29f, #ffa99f); }
+.card-purple .card-strip { background: linear-gradient(to right, #d4b5ff, #ccff90); } /* Looks like purple to light green */
+
+
+.card-content {
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-grow: 1;
+    justify-content: center;
 }
 
 .mode-icon {
-    width: 64px;
-    height: 64px;
-    margin: 0 auto 20px;
-    color: #8be9fd;
+    width: 80px;
+    height: 80px;
+    margin-bottom: 20px;
+    color: #555; /* Dark gray icons */
 }
 
 .mode-card h3 {
     margin: 10px 0;
-    color: #8be9fd;
+    color: #333;
+    font-size: 1.4rem;
+    font-weight: 800;
 }
 
 .mode-card p {
     font-size: 0.9em;
+    color: #888; /* Gray description */
+    line-height: 1.6;
+    font-weight: bold;
+}
     color: #ccc;
     line-height: 1.5;
 }

@@ -5,11 +5,14 @@ const authService = new AuthService();
 export class AuthController {
     async login(req, res) {
         try {
-            const { email, password } = req.body;
-            if (!email || !password) {
-                return res.status(400).json({ error: 'メールアドレスとパスワードは必須です。' });
+            const { email, username, password } = req.body;
+            // emailまたはusernameのどちらかがあればOK
+            const identifier = email || username;
+
+            if (!identifier || !password) {
+                return res.status(400).json({ error: 'ユーザーID(またはメールアドレス)とパスワードは必須です。' });
             }
-            const result = await authService.login(email, password);
+            const result = await authService.login(identifier, password);
             res.json(result);
         } catch (error) {
             // セキュリティのため、詳細なエラー内容は伏せるべきだが、
@@ -20,11 +23,17 @@ export class AuthController {
 
     async register(req, res) {
         try {
-            const { username, email, password } = req.body;
-             if (!username || !email || !password) {
-                return res.status(400).json({ error: 'すべての項目を入力してください。' });
+            const { username, email, password, nickname, role } = req.body;
+             if (!username || !password) {
+                return res.status(400).json({ error: 'ユーザー名とパスワードは必須です。' });
             }
-            const user = await authService.register(username, email, password);
+
+            // emailが空文字列の場合はundefined/nullとして扱う
+            const validEmail = email ? email : undefined;
+            // roleが指定されていない場合はデフォルト 'student'
+            const userRole = role === 'teacher' ? 'teacher' : 'student';
+
+            const user = await authService.register(username, validEmail, password, nickname, userRole);
             res.status(201).json(user);
         } catch (error) {
             res.status(400).json({ error: error.message });

@@ -1,115 +1,137 @@
-/* SelectMode/style.css */
+/* SelectMode/style.css - Light Theme */
 
 .select-mode-scene {
-    padding: 20px 40px;
+    padding: 40px;
     height: 100%;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
+    color: #333;
 }
 
 .select-mode-scene h2 {
     margin-top: 0;
-    margin-bottom: 20px;
-    font-size: 2em;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    border-bottom: 2px solid rgba(255,255,255,0.2);
-    padding-bottom: 10px;
+    margin-bottom: 10px;
+    font-size: 2.5rem;
+    color: #2c3e50;
+    font-weight: 800;
+    letter-spacing: 1px;
+    border-bottom: 3px solid #eee;
+    padding-bottom: 15px;
     flex-shrink: 0;
+    text-shadow: none;
 }
 
 .select-mode-scene p {
-    margin-bottom: 20px;
+    margin-bottom: 30px;
     flex-shrink: 0;
-    color: #eee;
+    color: #666;
+    font-size: 1.1rem;
+    font-weight: bold;
 }
 
 /* リストコンテナ (スクロール領域) */
 .select-mode-scene .experiment-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 30px;
     overflow-y: auto;
-    padding-bottom: 40px;
-    padding-right: 10px; /* スクロールバーの分 */
+    padding: 10px 10px 40px 10px; /* 余白調整 */
 }
 
-/* カードスタイル補強 */
+/* 実験カード */
 .select-mode-scene .experiment-card {
-    background: rgba(255, 255, 255, 0.1); /* Glass effect fallback */
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
+    background-color: #ffffff !important; /* Force solid white */
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05); /* 柔らかい影 */
+    border: 1px solid rgba(0,0,0,0.02);
     display: flex;
     flex-direction: column;
-    min-height: 380px; /* 高さをしっかり確保 */
+    min-height: 380px;
     overflow: hidden;
-    transition: transform 0.2s;
+    transition: all 0.3s ease;
+    backdrop-filter: none;
+    position: relative;
+    z-index: 10;
 }
 
 .select-mode-scene .experiment-card:hover {
-    transform: translateY(-5px);
-    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    background-color: #ffffff !important;
 }
 
 /* 画像エリア */
 .select-mode-scene .card-image {
-    height: 140px !important;
-    min-height: 140px;
+    height: 180px !important;
+    min-height: 180px;
     width: 100%;
     flex-shrink: 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid #f0f0f0;
+    background-color: #eef2f5;
 }
 
 /* コンテンツエリア */
 .select-mode-scene .card-content {
-    padding: 15px;
+    padding: 24px;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    color: #fff; /* 文字色を強制的に白に */
-    overflow: visible; /* hiddenを解除 */
+    color: #333;
+    overflow: visible;
 }
 
 .select-mode-scene .card-content h3 {
-    margin: 0 0 10px 0;
-    font-size: 1.1rem;
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.4rem;
+    color: #2c3e50;
+    font-weight: 700;
     line-height: 1.4;
-    white-space: normal; /* 折り返し有効 */
+    white-space: normal;
 }
 
 .select-mode-scene .difficulty-badge {
-    font-size: 0.8rem;
-    background: rgba(0,0,0,0.3);
-    padding: 4px 8px;
-    border-radius: 4px;
-    display: inline-block;
-    margin-bottom: 10px;
-    color: #ffd700;
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    backdrop-filter: blur(5px);
+    margin-bottom: 0;
 }
 
 .select-mode-scene .card-content p {
-    font-size: 0.9rem;
-    color: #ddd;
-    line-height: 1.5;
-    margin: 0 0 15px 0;
-    flex-grow: 1; /* ボタンを下端に押しやる */
+    font-size: 0.95rem;
+    color: #7f8c8d;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    flex-grow: 1;
 }
 
 .select-mode-scene .start-btn {
     width: 100%;
-    padding: 10px;
-    background: #2c0b4f; /* アクセントカラー */
-    color: #fff;
+    padding: 14px;
     border: none;
-    border-radius: 6px;
-    cursor: pointer;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #1bacbf 0%, #00d2ff 100%);
+    color: white;
     font-weight: bold;
-    transition: background 0.2s;
-    margin-top: auto; /* ボタンを一番下に */
-    flex-shrink: 0;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: transform 0.2s, filter 0.2s;
+    margin-top: auto;
+    box-shadow: 0 4px 10px rgba(27, 172, 191, 0.3);
 }
 
 .select-mode-scene .start-btn:hover {
-    background: #4a1c7a;
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(27, 172, 191, 0.4);
+    background: linear-gradient(135deg, #1bacbf 0%, #00d2ff 100%);
 }

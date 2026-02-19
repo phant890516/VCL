@@ -19,17 +19,11 @@ import { TrophyView } from './views/Trophy/index.js';
 
 console.log('VCL SPA Frontend Initialized');
 
-// ルーター用のラッパー関数
-// View関数は(navigateTo function, params object)を受け取る設計になっているため
 function wrapView(ViewFunction) {
     return (params) => {
         const contentRoot = document.getElementById('content-root');
         if (contentRoot) {
             contentRoot.innerHTML = '';
-            // Sidebarの表示制御: Login/Register画面ではサイドバーを隠したいかもしれない
-            // しかし現在の実装ではHTML側に固定されている可能性もあるので、ここではViewのレンダリングのみ行う
-
-            // Viewを生成してDOMに追加
             const viewElement = ViewFunction(navigateTo, params);
             if (viewElement) {
                 contentRoot.appendChild(viewElement);
@@ -38,7 +32,6 @@ function wrapView(ViewFunction) {
     };
 }
 
-// ResultSceneは古い構造(classなど)かもしれないのでアダプタ
 function renderResult(params) {
     const contentRoot = document.getElementById('content-root');
     if (contentRoot) {
@@ -48,7 +41,6 @@ function renderResult(params) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. ルート登録
     registerRoute('/', wrapView(LoginView));
     registerRoute('/register', wrapView(RegisterView));
     registerRoute('/login', wrapView(LoginView));
@@ -71,9 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     registerRoute('/result', renderResult);
 
-    // 2. サイドバー初期化
     initSidebar((id) => {
-        // data-id="home" などをパスに変換
         const pathMap = {
             'home': '/dashboard',
             'quest': '/select-mode',
@@ -86,6 +76,5 @@ document.addEventListener('DOMContentLoaded', () => {
         navigateTo(path);
     });
 
-    // 3. ルーター起動 (現在のURLに応じて画面表示)
     initRouter();
 });

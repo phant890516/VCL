@@ -1,21 +1,78 @@
-<div class="register-container">
-    <div class="register-card">
-        <h2>VCL ログイン / 登録</h2>
-        <div class="form-group">
-            <label>ユーザー名</label>
-            <input type="text" id="reg-username" placeholder="User Name">
-        </div>
-        <div class="form-group">
-            <label>メールアドレス</label>
-            <input type="email" id="reg-email" placeholder="example@mail.com">
-        </div>
-        <div class="form-group">
-            <label>パスワード</label>
-            <input type="password" id="reg-password" placeholder="Password">
-        </div>
-        <button id="btn-login" class="primary-btn login-btn">Login / Register</button>
-        <div class="guest-link-container">
-            <a href="#" id="link-guest">ゲストとして開始</a>
+<div class="register-wrapper">
+    <!-- Left Side: Visual -->
+    <div class="register-visual">
+        <div class="visual-content">
+            <h1 class="visual-title">Join VCL</h1>
+            <p class="visual-subtitle">Virtual Chemistry Lab</p>
+            <p class="visual-description">
+                新しい発見が待っています。<br>
+                さあ、実験を始めましょう。
+            </p>
+            <div class="visual-decoration">
+                <div class="circle circle-1"></div>
+                <div class="circle circle-2"></div>
+                <div class="circle circle-3"></div>
+            </div>
         </div>
     </div>
+
+    <!-- Right Side: Form -->
+    <div class="register-form-section">
+        <div class="register-card-modern">
+            <div class="role-switch-container">
+                <input type="checkbox" id="reg-role-toggle" class="role-checkbox">
+                <label for="reg-role-toggle" class="role-switch-label">
+                    <span class="role-option role-student">生徒 🎓</span>
+                    <span class="role-option role-teacher">教員 🏫</span>
+                    <div class="role-slider"></div>
+                </label>
+            </div>
+
+            <div class="form-header">
+                <h2 id="form-title">生徒アカウント作成</h2>
+                <p>必要な情報を入力してください</p>
+            </div>
+
+            <form id="register-form">
+                <div class="input-group">
+                    <label for="reg-username">ユーザー名</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">👤</span>
+                        <input type="text" id="reg-username" required placeholder="User Name">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="reg-email">メールアドレス</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">✉️</span>
+                        <input type="email" id="reg-email" required placeholder="example@mail.com">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="reg-password">パスワード</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">🔒</span>
+                        <input type="password" id="reg-password" required placeholder="Password">
+                    </div>
+                </div>
+
+                <div class="form-error" id="register-error" style="color: #ff4444; margin-bottom: 20px; text-align: center; font-size: 0.9rem;"></div>
+
+                <div class="form-actions">
+                    <button id="btn-register" type="submit" class="primary-btn register-btn">
+                        アカウントを作成 🧪
+                    </button>
+                </div>
+
+                <div class="guest-link-container">
+                    <p>すでにアカウントをお持ちですか？ <a href="#" id="link-login">ログインはこちら</a></p>
+                    <div class="divider">または</div>
+                    <a href="#" id="link-guest" class="secondary-link">ゲストとして開始</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 </div>

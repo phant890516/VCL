@@ -9,6 +9,9 @@
     "test": "vitest"
   },
   "dependencies": {
+    "socket.io-client": "^4.8.3",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7",
     "three": "^0.155.0"
   },
   "devDependencies": {

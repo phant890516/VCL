@@ -8,8 +8,15 @@
     "test": "vitest"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
     "express": "^4.18.2",
-    "cors": "^2.8.5"
+    "jsonwebtoken": "^9.0.3",
+    "node-fetch": "^3.3.2",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
     "vitest": "^0.34.0"

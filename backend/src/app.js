@@ -1,16 +1,26 @@
 import cors from 'cors';
 import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import { initializeDatabase } from './db/database.js';
 import authRoutes from './routes/authRoutes.js';
+import gyroRoutes from './routes/gyroRoutes.js';
 
 const app = express();
+const httpServer = createServer(app);
 const PORT = 3000;
+
+const io = new Server(httpServer, {
+    cors: { origin: "*", methods: ["GET", "POST"] }
+});
+app.set('io', io);
 
 app.use(cors());
 app.use(express.json());
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/gyro', gyroRoutes);
 
 // ヘルスチェック用
 app.get('/', (req, res) => {
@@ -30,9 +40,8 @@ initializeDatabase()
         } catch (error) {
             // ユーザーが既に存在するなどのエラーは無視
         }
-
-        app.listen(PORT, () => {
-            console.log(`Server is running on http://localhost:${PORT}`);
+        httpServer.listen(PORT, '0.0.0.0', () => {
+            console.log(`Server is running on http://0.0.0.0:${PORT}`);
         });
     })
     .catch((err) => {

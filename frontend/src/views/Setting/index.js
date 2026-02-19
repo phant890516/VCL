@@ -1,7 +1,18 @@
+import { LoginView } from '../Login/index.js';
 import './style.css';
 import template from './template.html?raw';
 
 export function SettingView(navigateTo) {
+    // 1. ログイン状態のチェック (初期値はログインしていない状態を想定)
+    const token = localStorage.getItem('vcl_token');
+
+    // 2. ログインしていない場合は、「設定」画面の代わりに「ログイン」画面を表示する
+    if (!token) {
+        console.log('未ログインのため、ログイン画面を表示します');
+        return LoginView(navigateTo);
+    }
+
+    // 3. ログインしている場合は通常通り設定画面を表示
     const container = document.createElement('div');
     container.classList.add('view-container');
     container.innerHTML = template;
@@ -35,7 +46,11 @@ export function SettingView(navigateTo) {
            if(confirm('ログアウトしますか？')) {
                localStorage.removeItem('vcl_token');
                localStorage.removeItem('vcl_user');
-               navigateTo('/login');
+               // ログアウト後は再度設定画面(=ログイン画面)を再描画するためリロードに近い挙動にするか、
+               // あるいは明示的に navigateTo('/login') する。
+               // 今回は要件に従い「設定の所」がログイン画面になるため、実質的に同じビューを再表示させる形になるが、
+               // パスとしては /setting のままで中身が変わる
+               navigateTo('/setting'); // リフレッシュ
            }
         });
     }

@@ -1,6 +1,6 @@
+import { io } from 'socket.io-client';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 /**
  * 実験室の3Dシーンを管理するクラス
@@ -15,7 +15,6 @@ export class LabScene {
         this.camera = null;
         this.renderer = null;
         this.controls = null;
-        this.gui = null; // デバッグUI
         this.testTubeGroup = null; // 試験管の操作用
         this.flaskGroup = null;    // フラスコの操作用
         this.animationId = null;
@@ -25,11 +24,25 @@ export class LabScene {
         this.pouringParticles = [];
         this.isPouring = false;
 
+        this.socket = null; // Socket.io endpoint
+        this.targetRotationZ = 0; // ラグ軽減のための目標角度
+
+        // キャリブレーション用
+        this.calibrationOffset = 0;
+        this.lastRawAngle = 0;
+        this.angleHistory = []; // 平均化用バッファ
+        this.keyDownHandler = null;
+
+        this.debugDisplay = null; // デバッグ表示用エレメント
+
         // 初期化処理
         this.init();
     }
 
     init() {
+        // デバッグ表示要素の取得
+        this.debugDisplay = document.getElementById('debug-angle-display');
+
         // 1. シーン作成
         this.scene = new THREE.Scene();
         // 背景色（実験室っぽい色に設定してもよいが、一旦ダークグレー）
@@ -75,21 +88,28 @@ export class LabScene {
 
         // 7. 試験管を作成 (位置をずらす)
         this.testTubeGroup = this.createTestTube();
-        // ★位置調整: フラスコに注ぎやすい位置へ (回転時にフラスコの口に来るように)
-        this.testTubeGroup.position.set(2, 4.5, 0);
+        // ★位置調整: フラスコインに注ぎやすい位置へ
+        this.testTubeGroup.position.set(-2, 4.5, 0); // 左に配置
         this.scene.add(this.testTubeGroup);
 
         // 8. フラスコを作成
         this.flaskGroup = this.createFlask();
-        this.flaskGroup.position.set(-2, 0, 0); // 左に配置
+        this.flaskGroup.position.set(2, 0, 0); // 右に配置
         this.scene.add(this.flaskGroup);
 
-        // 9. デバッグUIセットアップ
-        this.setupDebugUI();
+        // 9. デバッグUIセットアップ（削除）
+        // this.setupDebugUI();
 
         // リサイズイベント
         this.resizeHandler = this.onResize.bind(this);
         window.addEventListener('resize', this.resizeHandler);
+
+        // キーボードイベント (キャリブレーション用)
+        this.keyDownHandler = this.onKeyDown.bind(this);
+        window.addEventListener('keydown', this.keyDownHandler);
+
+        // Socket接続設定
+        this.setupSocketConnection();
 
         // アニメーションループ開始
         this.animate();
@@ -107,32 +127,6 @@ export class LabScene {
         const axesHelper = new THREE.AxesHelper(2);
         axesHelper.position.y = 0;
         this.scene.add(axesHelper);
-    }
-
-    setupDebugUI() {
-        this.gui = new GUI({ width: 300 });
-        const debugObj = {
-            testTubeAngle: 0,
-            reset: () => {
-                debugObj.testTubeAngle = 0;
-                if (this.testTubeGroup) {
-                    this.testTubeGroup.rotation.z = 0;
-                }
-            }
-        };
-
-        const folder = this.gui.addFolder('Laboratory Controls');
-
-        folder.add(debugObj, 'testTubeAngle', 0, 180).name('Test Tube Angle (deg)')
-            .onChange((value) => {
-                if (this.testTubeGroup) {
-                    // Z軸回転で傾ける（マイナス方向に回すと左に倒れるイメージ）
-                    this.testTubeGroup.rotation.z = THREE.MathUtils.degToRad(value);
-                }
-            });
-
-        folder.add(debugObj, 'reset').name('Reset Position');
-        folder.open();
     }
 
     createTestTube() {
@@ -279,6 +273,14 @@ export class LabScene {
         }
     }
 
+    onKeyDown(event) {
+        // 'C'キーで現在の角度を0度として補正（キャリブレーション）
+        if (event.key.toLowerCase() === 'c') {
+            this.calibrationOffset = this.lastRawAngle;
+            console.log(`[LabScene] Calibrated! New Offset: ${this.calibrationOffset}`);
+        }
+    }
+
     animate() {
         this.animationId = requestAnimationFrame(this.animate.bind(this));
 
@@ -286,12 +288,19 @@ export class LabScene {
             this.controls.update();
         }
 
+        // --- 試験管の角度を滑らかに更新 (Lerp) ---
+        if (this.testTubeGroup) {
+            // 現在の角度から目標角度へ少しずつ近づける
+            // 0.02(重すぎ) -> 0.08(適度な追従性) に変更。戻りすぎ（オーバーシュート）を防ぐため反応を良くする。
+            this.testTubeGroup.rotation.z += (this.targetRotationZ - this.testTubeGroup.rotation.z) * 0.08;
+        }
+
         // --- 注ぐモーションのロジック ---
         if (this.testTubeGroup) {
             // 現在のZ軸回転角度を取得 (ラジアン)
             const rotationZ = Math.abs(this.testTubeGroup.rotation.z);
-            // 75度
-            const threshold = THREE.MathUtils.degToRad(75);
+            // 60度で流れるように変更 (変更前: 75度)
+            const threshold = THREE.MathUtils.degToRad(60);
 
             if (rotationZ >= threshold) {
                 this.isPouring = true;
@@ -357,13 +366,88 @@ export class LabScene {
         }
     }
 
+    setupSocketConnection() {
+        // バックエンドに接続 (ハードコードされていますが、環境変数などが望ましい)
+        this.socket = io('http://localhost:3000');
+
+        this.socket.on('connect', () => {
+            console.log('Connected to backend socket');
+        });
+
+        // ESP32からのジャイロデータを受信
+        this.socket.on('gyro-data', (data) => {
+            // data.angle は -180 ~ 180 程度の値が入ると想定
+            // 数値変換を確実に行う
+            let angleVal = parseFloat(data.angle);
+            if (this.testTubeGroup && !isNaN(angleVal)) {
+
+                // 角度の正規化: 0~360度で来る場合も考慮して -180 ~ 180 に収める
+                // これにより「右に傾けると350度になってしまい、反対側に回ろうとする」等を防ぐ
+                while (angleVal <= -180) angleVal += 360;
+                while (angleVal > 180) angleVal -= 360;
+
+                this.lastRawAngle = angleVal; // 正規化後の値を保存
+
+                // キャリブレーション補正
+                let adjustedAngle = angleVal - this.calibrationOffset;
+
+                // 補正後も再度正規化（オフセットで範囲外に出る可能性があるため）
+                while (adjustedAngle <= -180) adjustedAngle += 360;
+                while (adjustedAngle > 180) adjustedAngle -= 360;
+
+                // --- 移動平均フィルタ (過去5フレームの平均に短縮してラグを減らす) ---
+                this.angleHistory.push(adjustedAngle);
+                if (this.angleHistory.length > 5) {
+                    this.angleHistory.shift();
+                }
+
+                // 平均値を計算
+                const averageAngle = this.angleHistory.reduce((sum, val) => sum + val, 0) / this.angleHistory.length;
+
+                // 強力なデッドバンド: 直立付近(±5度)は完全に0にする
+                let finalAngle = averageAngle;
+                if (Math.abs(finalAngle) < 5.0) {
+                    finalAngle = 0;
+                }
+
+                // --- 稼働範囲の制限 (角度制限) ---
+                // 左に90度、右に90度以上は回らないようにする (物理的な限界をシミュレート)
+                // マイナスが右回転の場合があるため、clampを使う
+                // THREE.MathUtils.clamp(value, min, max)
+                finalAngle = THREE.MathUtils.clamp(finalAngle, -120, 120);
+
+                // もし「右側（マイナス方向）の反応が鈍い」と感じる場合、
+                // センサーの取り付け向きによって、特定の範囲の値が飛んでいる可能性がある。
+                // ここでは単純に角度制限を入れる。
+
+                // 目標角度を更新
+                this.targetRotationZ = THREE.MathUtils.degToRad(finalAngle);
+
+                // デバッグ表示更新
+                if (this.debugDisplay) {
+                    this.debugDisplay.innerHTML = `
+                        Raw: ${angleVal.toFixed(1)}°<br>
+                        Adj: ${adjustedAngle.toFixed(1)}°<br>
+                        Final: ${finalAngle.toFixed(1)}°
+                    `;
+                }
+
+            } else {
+                console.warn('Gyro update skipped:', { group: !!this.testTubeGroup, angle: data.angle });
+            }
+        });
+    }
+
     /**
      * 画面遷移時などにリソースを解放する
      */
     dispose() {
-        // GUIの削除
-        if (this.gui) {
-            this.gui.destroy();
+        if (this.socket) {
+            this.socket.disconnect();
+        }
+
+        if (this.keyDownHandler) {
+            window.removeEventListener('keydown', this.keyDownHandler);
         }
 
         if (this.resizeHandler) {
@@ -385,7 +469,5 @@ export class LabScene {
                 this.container.removeChild(this.renderer.domElement);
             }
         }
-
-        // 必要に応じてシーン内のオブジェクトもdisposeする
     }
 }

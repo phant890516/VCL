@@ -1,0 +1,92 @@
+
+/* Role Switch Container */
+.role-switch-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 25px;
+}
+
+/* Hide Checkbox */
+.role-checkbox {
+    display: none;
+}
+
+/* Toggle Switch Background */
+.role-switch-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 240px;
+    height: 50px;
+    background-color: #f0f2f5;
+    border-radius: 30px;
+    position: relative;
+    cursor: pointer;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+    user-select: none;
+}
+
+/* Options Text */
+.role-option {
+    flex: 1;
+    text-align: center;
+    z-index: 2;
+    font-weight: bold;
+    font-size: 1rem;
+    color: #888;
+    transition: color 0.3s ease;
+    line-height: 50px;
+}
+
+/* Slider (The moving part) */
+.role-slider {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 116px; /* (240 - 8) / 2 */
+    height: 42px;
+    background: #4facfe; /* Default Student Color */
+    border-radius: 26px;
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), background 0.3s ease;
+    z-index: 1;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* Checked State (Teacher) */
+.role-checkbox:checked + .role-switch-label .role-slider {
+    transform: translateX(116px);
+    background: #fa709a; /* Teacher Color (Warm Pink/Orange) */
+}
+
+/* Text Colors when Active */
+.role-checkbox:not(:checked) + .role-switch-label .role-student {
+    color: white;
+}
+
+.role-checkbox:checked + .role-switch-label .role-teacher {
+    color: white;
+}
+
+/* Theme Changes for Teacher Mode */
+/* Add these classes via JS to the container or specific elements */
+
+.teacher-mode .visual-content .visual-title {
+    text-shadow: 0 4px 10px rgba(100, 0, 0, 0.1);
+}
+
+.teacher-mode .register-visual {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); /* Warm Gradient */
+}
+
+.teacher-mode .register-btn {
+    background: linear-gradient(90deg, #fa709a 0%, #fee140 100%);
+}
+
+.teacher-mode .input-wrapper:focus-within {
+    border-color: #fa709a;
+    box-shadow: 0 0 0 3px rgba(250, 112, 154, 0.1);
+}
+
+.teacher-mode .input-icon {
+    color: #fa709a;
+}

@@ -7,10 +7,15 @@
         <div class="lab-info-box">
             <strong class="lab-title">実験中: <span id="lab-title-display">...</span></strong>
             <div class="lab-timer-area">経過時間: <span id="lab-timer">00:00</span></div>
+            <div id="lab-instruction-box" style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 0.9rem; display: none;">
+                <span style="color: #ff9a9e; font-weight: bold;">Mission:</span>
+                <span id="lab-instruction-text" style="color: #fff;"></span>
+            </div>
         </div>
     </div>
 
     <div class="lab-controls-overlay">
+        <button id="btn-lab-periodic-table" class="secondary-btn">周期表</button> <!-- 追加 -->
         <button id="btn-lab-abort" class="secondary-btn lab-btn-abort">中断して戻る</button>
         <button id="btn-lab-finish" class="primary-btn lab-btn-finish">実験終了</button>
     </div>
@@ -21,18 +26,44 @@
     </div>
 
     <!-- 下部ツールバー -->
-    <div class="lab-toolbar">
-        <button class="secondary-btn">ビーカー</button>
-        <button class="secondary-btn">フラスコ</button>
-        <button class="secondary-btn">スポイト</button>
-        <button class="secondary-btn">バーナー</button>
-        <div class="lab-toolbar-separator"></div>
-        <button class="primary-btn icon-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-            </svg>
-            <span>実験ノート</span>
-        </button>
+    <div class="lab-toolbar" id="lab-toolbar">
+        <!-- JSで動的にボタンを追加 -->
     </div>
-</div>
+
+    <!-- 解説ダイアログ -->
+    <div id="lab-explanation-dialog" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.85); border: 2px solid #4CAF50; border-radius: 10px; padding: 20px; z-index: 2000; width: 80%; max-width: 600px; color: white; text-align: center; box-shadow: 0 0 20px rgba(76, 175, 80, 0.5);">
+        <h2 style="color: #4CAF50; margin-top: 0;">実験成功！</h2>
+        <p id="lab-explanation-text" style="font-size: 1.2rem; line-height: 1.6; margin: 20px 0; text-align: left;"></p>
+        <button id="btn-close-explanation" class="primary-btn" style="font-size: 1.2rem; padding: 10px 30px;">クエスト完了</button>
+    </div>
+
+        <!-- 周期表オーバーレイ -->
+        <div id="periodic-table-overlay" class="periodic-table-overlay" style="display: none; background: rgba(0,0,0,0.9);">
+            <button id="btn-close-periodic" class="close-btn" aria-label="閉じる">&times;</button>
+            <div id="periodic-table-grid" class="periodic-table-container">
+                <!-- JSでセル生成 -->
+            </div>
+
+            <div class="element-info-panel">
+                <div id="pt-info-symbol" class="info-symbol-large">H</div>
+                <div class="info-details">
+                    <div style="display: flex; align-items: baseline; gap: 10px;">
+                        <span id="pt-info-name-jp" style="font-size: 2em; font-weight: bold;">水素</span>
+                        <span id="pt-info-name-en" style="color: #888;">Hydrogen</span>
+                        <span style="margin-left: auto;">原子番号: <span id="pt-info-number" style="color: cyan;">1</span></span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
+                        <div>原子量: <span id="pt-info-weight">1.008</span></div>
+                        <div>融点: <span id="pt-info-mp">-</span></div>
+                        <div>沸点: <span id="pt-info-bp">-</span></div>
+                        <div>外観: <span id="pt-info-app">-</span></div>
+                    </div>
+                    <div id="pt-info-desc" style="margin-top: 10px; color: #ccc;">-</div>
+                </div>
+            </div>
+
+            <div style="color: #888; margin-top: 10px; font-size: 0.9em;">
+                Joy-Con: [Lスティック] 移動 / [A] 選択 / [B] 閉じる
+            </div>
+        </div>
+    </div>

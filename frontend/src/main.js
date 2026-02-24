@@ -9,7 +9,7 @@ import { initSidebar } from './components/Sidebar.js';
 import { ResultScene } from './scenes/ResultScene.js';
 import { DashboardView } from './views/Dashboard/index.js';
 import { IdeaView } from './views/Idea/index.js';
-import { LabView } from './views/Lab/index.js';
+import { LabView } from './views/Lab/index.js'; // Ensure this path is correct
 import { LiveView } from './views/Live/index.js';
 import { LoginView } from './views/Login/index.js';
 import { RegisterView } from './views/Register/index.js';

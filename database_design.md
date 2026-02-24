@@ -21,12 +21,12 @@ erDiagram
 
     users {
         int id PK
-        string user_id UK "8-32文字, 記号不可"
-        string role "teacher/student"
+        string login_id UK "学校コード_クラス_出席番号"
         string password_hash
-        string nickname "生徒用"
-        string full_name "先生用"
-        string email "先生用"
+        string role "teacher/student"
+        string display_name "表示名(ニックネーム)"
+        boolean is_password_changed "初回変更フラグ"
+        datetime created_at
     }
 
     experiments {
@@ -54,12 +54,12 @@ erDiagram
 | カラム名 | データ型 | 制約 | 説明 |
 | :--- | :--- | :--- | :--- |
 | `id` | INTEGER | PK, AUTOINCREMENT | 内部識別ID |
-| `username` | TEXT | UNIQUE, NOT NULL | ログイン用ID (英数字, 8-32文字) |
-| `password` | TEXT | NOT NULL | ハッシュ化されたパスワード |
+| `login_id` | TEXT | UNIQUE, NOT NULL | ログインID (例: `SCH01_1A_05`) |
+| `password_hash` | TEXT | NOT NULL | ハッシュ化されたパスワード |
 | `role` | TEXT | NOT NULL | `student` (生徒) または `teacher` (教師) |
-| `nickname` | TEXT | NULLABLE | 生徒の表示名 (記号不可) |
-| `full_name` | TEXT | NULLABLE | 教師の氏名 |
-| `email` | TEXT | UNIQUE, NULLABLE | 教師の公式メールアドレス |
+| `display_name` | TEXT | NULLABLE | 画面表示名 (ニックネーム) |
+| `is_password_changed` | INTEGER | DEFAULT 0 | 0:未変更(初回), 1:変更済み |
+| `note` | TEXT | NULLABLE | 教師用メモ (氏名・連絡先等) |
 | `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | 作成日時 |
 | `updated_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | 更新日時 |
 
@@ -134,12 +134,12 @@ erDiagram
 -- ユーザーテーブル
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  username TEXT UNIQUE NOT NULL,
-  password TEXT NOT NULL,
+  login_id TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
   role TEXT NOT NULL CHECK (role IN ('student', 'teacher', 'admin')),
-  nickname TEXT,
-  full_name TEXT,
-  email TEXT UNIQUE,
+  display_name TEXT,
+  is_password_changed INTEGER DEFAULT 0 CHECK (is_password_changed IN (0, 1)),
+  note TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

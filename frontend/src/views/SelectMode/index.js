@@ -30,21 +30,30 @@ export function SelectModeView(navigateTo) {
                     'exp_08_mg': 'linear-gradient(135deg, #fff1eb 0%, #ace0f9 100%)', // マグネシウム燃焼 (白光)
                     'exp_09_ag': 'linear-gradient(135deg, #c33764 0%, #1d2671 100%)', // 硝酸銀 (深紅/沈殿)
                     'exp_10_cu': 'linear-gradient(135deg, #eb3349 0%, #f45c43 100%)', // 銅 (赤褐色)
-                    'exp_11_fe_s': 'linear-gradient(135deg, #434343 0%, #000000 100%)' // 鉄硫黄 (黒)
+                    'exp_11_fe_s': 'linear-gradient(135deg, #434343 0%, #000000 100%)', // 鉄硫黄 (黒)
+                    'exp_12_flame': 'linear-gradient(135deg, #f83600 0%, #f9d423 100%)' // 炎色反応 (オレンジ/黄)
                 };
                 return gradients[id] || 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)'; // デフォルト
             };
 
             const bgStyle = getGradient(exp.id);
 
+            const isAvailable = exp.available !== false; // デフォルトはtrue
+
             // 安全なHTML構築のため、テンプレートリテラルを使用
             card.innerHTML = `
-                <div class="card-image" style="background: ${bgStyle};"></div>
+                <div class="card-image" style="background: ${bgStyle}; ${!isAvailable ? 'filter: grayscale(100%);' : ''}"></div>
                 <div class="card-content">
                     <h3>${exp.title}</h3>
                     <div class="difficulty-badge">使用物質: ${exp.materials}</div>
                     <p>${exp.desc}</p>
-                    <button class="start-btn" data-id="${exp.id}" data-title="${exp.title}">実験開始</button>
+                    <button class="start-btn"
+                        data-id="${exp.id}"
+                        data-title="${exp.title}"
+                        ${!isAvailable ? 'disabled style="background: #ccc; cursor: not-allowed;"' : ''}
+                    >
+                        ${isAvailable ? '実験開始' : 'Coming Soon'}
+                    </button>
                 </div>
             `;
             listContainer.appendChild(card);

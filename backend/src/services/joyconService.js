@@ -11,11 +11,14 @@ const GYRO_SCALE = 16.4;
 const CALIBRATION_SAMPLES = 200;
 const DEAD_ZONE = 0.5;
 
+const POLLING_INTERVAL_MS = 2000; // 2秒ごとに接続確認
+
 export class JoyConService extends EventEmitter {
     constructor() {
         super();
         this.device = null;
         this.globalCounter = 0;
+        this.pollingTimer = null;
 
         // キャリブレーション用
         this.isCalibrating = true;
@@ -25,51 +28,118 @@ export class JoyConService extends EventEmitter {
         // 角度計算用
         this.currentRoll = 0;
         this.lastRoll = 0;
+
+        // デバイス種別判定用
+        this.isLeftJoyCon = false;
+    }
+
+    start() {
+        if (this.pollingTimer) return;
+
+        console.log(`Joy-Conサービスを開始します (監視間隔: ${POLLING_INTERVAL_MS}ms)`);
+
+        // 初回実行
+        this.tryConnect();
+
+        // 監視ループ開始
+        this.pollingTimer = setInterval(() => {
+            if (!this.device) {
+                this.tryConnect();
+            }
+        }, POLLING_INTERVAL_MS);
+    }
+
+    stop() {
+        if (this.pollingTimer) {
+            clearInterval(this.pollingTimer);
+            this.pollingTimer = null;
+        }
+        if (this.device) {
+            this.handleDisconnect();
+        }
+    }
+
+    tryConnect() {
+        try {
+            const devices = HID.devices();
+            // ログが多すぎると邪魔なので、接続成功時のみ表示する
+            // console.log('Checking for Joy-Con...');
+
+            const joyconInfo = devices.find(d =>
+                (d.vendorId === VENDOR_ID) &&
+                (d.productId === JOYCON_L_PRODUCT_ID || d.productId === JOYCON_R_PRODUCT_ID)
+            );
+
+            if (joyconInfo && joyconInfo.path) {
+                console.log(`✅ Joy-Con発見: ${joyconInfo.product} (Path: ${joyconInfo.path})`);
+
+                try {
+                    // 既存の接続がある場合は一旦切断してから再接続（安全策）
+                    if (this.device) {
+                        try {
+                            this.device.close();
+                        } catch (e) { /* 無視 */ }
+                    }
+
+                    this.device = new HID.HID(joyconInfo.path);
+
+                    // Joy-Con (L) かどうかを判定してフラグをセット
+                    this.isLeftJoyCon = (joyconInfo.productId === JOYCON_L_PRODUCT_ID);
+                    console.log(`🎮 デバイスタイプ: Joy-Con (${this.isLeftJoyCon ? 'L' : 'R'})`);
+
+                    this.device.on('data', (data) => {
+                        this.handleData(data);
+                    });
+
+                    this.device.on('error', (err) => {
+                        console.error('⚠️ Joy-Con通信エラー (切断検知):', err);
+                        this.handleDisconnect();
+                    });
+
+                    this.device.on('error', (err) => {
+                        console.error('⚠️ Joy-Con通信エラー (切断検知):', err);
+                        this.handleDisconnect();
+                    });
+
+                    // 初期化シーケンス
+                    this.initJoyCon();
+
+                    this.emit('connected', { product: joyconInfo.product });
+
+                    // キャリブレーション開始（接続直後に行う）
+                    this.isCalibrating = true;
+                    this.calibrationData = { gyroX: 0, gyroY: 0, gyroZ: 0, count: 0 };
+                    console.log('⏳ キャリブレーションを開始します（数秒間静置してください）...');
+
+                } catch (connErr) {
+                    console.error('Joy-Con接続エラー:', connErr);
+                    this.handleDisconnect();
+                }
+            }
+        } catch (e) {
+            // HID.devices() 自体のエラーなど
+            console.error('デバイススキャンエラー:', e);
+        }
+    }
+
+    handleDisconnect() {
+        if (this.device) {
+            try {
+                this.device.removeAllListeners('data');
+                this.device.removeAllListeners('error');
+                this.device.close();
+            } catch (e) {
+                // すでに閉じられている場合など
+            }
+        }
+        this.device = null;
+        console.log('🔄 Joy-Con切断。再接続待機中...');
+        this.emit('disconnect');
     }
 
     connect() {
-        const devices = HID.devices();
-
-        console.log('--- Connected HID Devices ---');
-        let foundJoyCon = false;
-        devices.forEach(d => {
-            if (d.vendorId === VENDOR_ID) {
-                console.log(`Found Nintendo Device: PID 0x${d.productId.toString(16)} (${d.product}) Path: ${d.path}`);
-                foundJoyCon = true;
-            }
-        });
-        console.log('-----------------------------');
-
-        const joyconInfo = devices.find(d =>
-            d.vendorId === VENDOR_ID &&
-            (d.productId === JOYCON_L_PRODUCT_ID || d.productId === JOYCON_R_PRODUCT_ID)
-        );
-
-        if (!joyconInfo) {
-            console.log('❌ Joy-Con (VendorID 0x057e) が見つかりません。');
-            console.log('   対策: Bluetooth設定で「Joy-Con」を削除し、再ペアリングしてください。');
-            return;
-        }
-
-        try {
-            this.device = new HID.HID(joyconInfo.path);
-            console.log(`✅ Connected to Joy-Con: ${joyconInfo.product}`);
-            console.log('⏳ Starting Calibration (Keep device still for a few seconds)...');
-
-            this.device.on('data', (data) => {
-                this.handleData(data);
-            });
-
-            this.device.on('error', (err) => {
-                console.error('Joy-Con error:', err);
-                this.emit('disconnect');
-            });
-
-            this.initJoyCon();
-
-        } catch (e) {
-            console.error('Failed to open Joy-Con device:', e);
-        }
+        // 後方互換性のため
+        this.start();
     }
 
     initJoyCon() {
@@ -260,6 +330,12 @@ export class JoyConService extends EventEmitter {
             y: rawAccel.y / ACCEL_SCALE,
             z: rawAccel.z / ACCEL_SCALE
         };
+
+        // Joy-Con (L) の場合、左右(Y軸)と前後(X軸)を反転させて (R) と挙動を合わせる
+        if (this.isLeftJoyCon) {
+            accel.y = -accel.y;
+            accel.x = -accel.x;
+        }
 
         const gyro = {
             x: (rawGyro.x - this.offset.gyroX) / GYRO_SCALE,

@@ -1027,7 +1027,7 @@ export class LabScene {
     }
 
     setupSocketConnection() {
-        // バックエンドに接続 (ハードコードされていますが、環境変数などが望ましい)
+        // バックエンドに接続
         this.socket = io('http://localhost:3000');
 
         this.socket.on('connect', () => {

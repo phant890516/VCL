@@ -3,7 +3,25 @@
 import cv2
 import numpy as np
 import time
+import socket
+import json
 from PIL import Image, ImageDraw, ImageFont
+
+# --- UDP通信設定 ---
+UDP_IP = "127.0.0.1"
+UDP_PORT = 5005
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+def send_data(pour_ok, distance, error=None):
+    data = {
+        "pour_ok": pour_ok,
+        "distance": distance,
+        "error": error
+    }
+    try:
+        sock.sendto(json.dumps(data).encode('utf-8'), (UDP_IP, UDP_PORT))
+    except Exception as e:
+        print(f"UDP send error: {e}")
 
 def draw_text_ja(img, text_list, pos, color=(0,255,0), font_size=24):
     img_pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
@@ -93,6 +111,7 @@ def detect():
             texts.append("AprilTag not found")
             near_started = None
             near_stable = False
+            send_data(False, 0, "AprilTag not found")
         else:
             # 表示が反転してるなら、描画用 corners も反転させる
             if DISPLAY_FIX_MIRROR:
@@ -120,6 +139,7 @@ def detect():
                 texts.append(f"Need both tags: tube={idx_tube is not None}, flask={idx_flask is not None}")
                 near_started = None
                 near_stable = False
+                send_data(False, 0, "Missing required tags")
 
                 # どれか片方だけでも中心点表示したいなら、ここで描画してもOK
             else:
@@ -186,6 +206,9 @@ def detect():
                 texts.append(f"tube_id={TUBE_TAG_ID} flask_id={FLASK_TAG_ID}")
                 texts.append(f"dist_px={dist_px:.1f} thr={DIST_THRESH_PX:.1f}")
                 texts.append(f"pour_ok={near_stable}")
+
+                # ★追加: UDPでNode.jsへ送信
+                send_data(near_stable, dist_px)
 
         # 文字（日本語OK）
         vis = draw_text_ja(vis, texts, (10,10), (0,255,0))

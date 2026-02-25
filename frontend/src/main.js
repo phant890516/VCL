@@ -41,7 +41,10 @@ function renderResult(params) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    registerRoute('/', wrapView(LoginView));
+    // U22対応: ログイン画面をスキップしてダッシュボードを初期表示とする
+    // registerRoute('/', wrapView(LoginView));
+    registerRoute('/', wrapView(DashboardView));
+
     registerRoute('/register', wrapView(RegisterView));
     registerRoute('/login', wrapView(LoginView));
 

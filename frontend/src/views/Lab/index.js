@@ -1,6 +1,7 @@
 import '../../assets/periodicTable.css';
 import { periodicData } from '../../data/periodicData.js';
 import { periodicTableLayout } from '../../data/periodicTable.js';
+import { trophiesData, unlockTrophy } from '../../data/trophies.js';
 import { LabScene } from '../../scenes/LabScene.js';
 import './style.css';
 import template from './template.html?raw';
@@ -427,6 +428,21 @@ export function LabView(navigateTo, params = {}) {
                 const dialog = container.querySelector('#lab-explanation-dialog');
                 const textEl = container.querySelector('#lab-explanation-text');
                 const btnClose = container.querySelector('#btn-close-explanation');
+
+                // ★トロフィー獲得ロジックの追加
+                if (expId) {
+                    const trophyId = `trophy_${expId}`;
+                    const isNew = unlockTrophy(trophyId);
+                    if (isNew) {
+                         // 詳細情報を取得して表示
+                         const t = trophiesData.find(item => item.id === trophyId);
+                         const title = t ? t.title : '実験達成！';
+                         alert(`🏆 トロフィー獲得！\n\n「${title}」\n\n新しい実績が解除されました！`);
+                    } else {
+                         // already unlocked
+                         console.log(`Trophy ${trophyId} already acquired.`);
+                    }
+                }
 
                 if (dialog && textEl) {
                     if (expId === 'exp_01_o2') {

@@ -1,4 +1,4 @@
-.trophy-container {
+﻿.trophy-container {
     padding: 40px;
     width: calc(100% - 60px);
     height: calc(100% - 60px);
@@ -6,37 +6,78 @@
     overflow-y: auto;
     box-sizing: border-box;
     color: #333;
-    background-color: #ffffff !important; /* Force solid white */
+    background-color: #ffffff !important;
     border-radius: 20px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.05);
     position: relative;
     z-index: 10;
 }
 
+.trophy-container h2 {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 30px;
+    color: #2c3e50;
+    font-size: 1.8rem;
+    font-weight: 800;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 15px;
+}
+
+.svg-icon {
+    width: 32px;
+    height: 32px;
+    stroke: #f1c40f;
+    stroke-width: 2.5;
+}
+
 .trophy-item {
-    background-color: #ffffff !important;
-    border: 1px solid #eee; /* Added border for contrast on white */
-    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
-    padding: 20px;
-    margin-bottom: 20px;
+    background-color: #ffffff;
+    border: 1px solid #eaeaea;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    padding: 24px;
+    margin-bottom: 16px;
     border-radius: 16px;
     display: flex;
     align-items: center;
-    gap: 25px;
-    transition: transform 0.2s, box-shadow 0.2s;
-    position: relative;
-    z-index: 11;
+    gap: 24px;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .trophy-item:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+    border-color: #e0e0e0;
+}
+
+/* Locked State */
+.trophy-item-locked {
+    background-color: #fafafa;
+    border-color: #efefef;
+    opacity: 0.85;
 }
 
 .trophy-icon {
-    font-size: 3em;
-    min-width: 60px;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 20px; /* Squircle */
+    flex-shrink: 0;
+    font-size: 1.5rem;
+}
+
+.trophy-icon-unlocked {
+    background: linear-gradient(135deg, #fff9c4 0%, #fff176 100%);
+    color: #fbc02d;
+    box-shadow: inset 0 0 0 1px rgba(251, 192, 45, 0.3);
+}
+
+.trophy-icon-locked {
+    background-color: #eeeeee;
+    color: #bdbdbd;
 }
 
 .trophy-content {
@@ -44,48 +85,44 @@
 }
 
 .trophy-title-text {
-    font-size: 1.3em;
+    font-size: 1.15rem;
     color: #2c3e50;
-    font-weight: 800;
-    margin-bottom: 5px;
-    display: block;
+    font-weight: 700;
+    margin-bottom: 6px;
+    letter-spacing: 0.02em;
+}
+
+.trophy-title-text-locked {
+    font-size: 1.15rem;
+    color: #95a5a6;
+    font-weight: 600;
+    margin-bottom: 6px;
 }
 
 .trophy-desc {
-    color: #7f8c8d;
-    font-size: 0.95em;
+    color: #607d8b;
+    font-size: 0.95rem;
     line-height: 1.5;
 }
 
-.trophy-date {
-    color: #00b894;
-    font-size: 0.85em;
-    font-weight: bold;
-    background: #e0f2f1;
-    padding: 4px 10px;
-    border-radius: 12px;
+.trophy-status-badge {
+    padding: 6px 16px;
+    border-radius: 30px;
+    font-size: 0.8rem;
+    font-weight: 700;
     white-space: nowrap;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
 }
 
-.trophy-item-locked {
-    background: #f1f2f6;
-    /* Removed opacity to prevent transparency issues */
-    /* opacity: 0.8; */
-    color: #999;
-    box-shadow: none;
+.trophy-status-badge.acquired {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #c8e6c9;
 }
 
-.trophy-icon-locked {
-    filter: grayscale(100%);
-    /* Removed opacity */
-    color: #b0c4de;
-}
-
-.trophy-status-locked {
-    color: #999;
-    font-size: 0.9em;
-    font-weight: bold;
-    background: #dfe6e9;
-    padding: 4px 10px;
-    border-radius: 12px;
+.trophy-status-badge.locked {
+    background-color: #eceff1;
+    color: #90a4ae;
+    border: 1px solid #cfd8dc;
 }

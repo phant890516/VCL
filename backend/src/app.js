@@ -27,9 +27,23 @@ try {
     const joyConService = new JoyConService();
     joyConService.connect(); // ← これを追加！これがないとデバイスを探しに行きません
     joyConService.on('change', (data) => {
+        // JoyConIndex に応じて操作対象を割り当て
+        // Index 0: 試験管 (Test Tube)
+        // Index 1: フラスコ (Flask)
+        let target = 'test_tube';
+        if (data.joyconIndex === 1) {
+            target = 'flask';
+        }
+
+        // デバッグログ: 初回または稀に表示して接続確認をしやすくする
+        if (Math.random() < 0.005) {
+             console.log(`JoyCon[${data.joyconIndex}] -> ${target} (Angle: ${data.angle.toFixed(1)})`);
+        }
+
         // 全クライアントにブロードキャスト
         // フロントエンドのLabScene.jsは 'gyro-data' イベントをリッスンし、data.angle を期待している
         io.emit('gyro-data', {
+            target: target,    // 操作対象 ('test_tube' or 'flask')
             angle: data.angle, // JoyConServiceで計算済みの角度 (Roll)
             // raw: data          // デバッグ用など
             // data全体を渡すように変更 (sticks, buttonsなどが含まれている)

@@ -5,47 +5,28 @@ const VENDOR_ID = 0x057e;
 const JOYCON_L_PRODUCT_ID = 0x2006;
 const JOYCON_R_PRODUCT_ID = 0x2007;
 
-// 単位変換係数
 const ACCEL_SCALE = 4096.0;
 const GYRO_SCALE = 16.4;
 const CALIBRATION_SAMPLES = 200;
 const DEAD_ZONE = 0.5;
 
-const POLLING_INTERVAL_MS = 2000; // 2秒ごとに接続確認
+const POLLING_INTERVAL_MS = 2000;
 
 export class JoyConService extends EventEmitter {
     constructor() {
         super();
-        this.device = null;
+        this.devices = new Map();
         this.globalCounter = 0;
         this.pollingTimer = null;
-
-        // キャリブレーション用
-        this.isCalibrating = true;
-        this.calibrationData = { gyroX: 0, gyroY: 0, gyroZ: 0, count: 0 };
-        this.offset = { gyroX: 0, gyroY: 0, gyroZ: 0 };
-
-        // 角度計算用
-        this.currentRoll = 0;
-        this.lastRoll = 0;
-
-        // デバイス種別判定用
-        this.isLeftJoyCon = false;
+        this.joyconCounter = 0;
     }
 
     start() {
         if (this.pollingTimer) return;
-
-        console.log(`Joy-Conサービスを開始します (監視間隔: ${POLLING_INTERVAL_MS}ms)`);
-
-        // 初回実行
+        console.log(`Joy-Conサービスを開始します(監視間隔: ${POLLING_INTERVAL_MS}ms)`);
         this.tryConnect();
-
-        // 監視ループ開始
         this.pollingTimer = setInterval(() => {
-            if (!this.device) {
-                this.tryConnect();
-            }
+            this.tryConnect();
         }, POLLING_INTERVAL_MS);
     }
 
@@ -54,365 +35,238 @@ export class JoyConService extends EventEmitter {
             clearInterval(this.pollingTimer);
             this.pollingTimer = null;
         }
-        if (this.device) {
-            this.handleDisconnect();
+        for (const [path, info] of this.devices.entries()) {
+            this.handleDisconnect(path);
         }
     }
 
     tryConnect() {
         try {
-            const devices = HID.devices();
-            // ログが多すぎると邪魔なので、接続成功時のみ表示する
-            // console.log('Checking for Joy-Con...');
-
-            const joyconInfo = devices.find(d =>
+            const hidDevices = HID.devices();
+            const joycons = hidDevices.filter(d =>
                 (d.vendorId === VENDOR_ID) &&
                 (d.productId === JOYCON_L_PRODUCT_ID || d.productId === JOYCON_R_PRODUCT_ID)
             );
 
-            if (joyconInfo && joyconInfo.path) {
-                console.log(`✅ Joy-Con発見: ${joyconInfo.product} (Path: ${joyconInfo.path})`);
+            for (const jc of joycons) {
+                if (jc.path && !this.devices.has(jc.path)) {
+                    console.log(`🎮 Joy-Con発見: ${jc.product} (Path: ${jc.path})`);
+                    try {
+                        const device = new HID.HID(jc.path);
+                        const isLeft = (jc.productId === JOYCON_L_PRODUCT_ID);
+                        const index = this.joyconCounter++;
+                        
+                        const state = {
+                            isLeftJoyCon: isLeft,
+                            isCalibrating: true,
+                            calibrationData: { gyroX: 0, gyroY: 0, gyroZ: 0, count: 0 },
+                            offset: { gyroX: 0, gyroY: 0, gyroZ: 0 },
+                            currentRoll: undefined,
+                            lastRoll: 0
+                        };
 
-                try {
-                    // 既存の接続がある場合は一旦切断してから再接続（安全策）
-                    if (this.device) {
-                        try {
-                            this.device.close();
-                        } catch (e) { /* 無視 */ }
+                        this.devices.set(jc.path, { device, state, index, product: jc.product });
+                        console.log(`🎮 デバイスタイプ: Joy-Con (${isLeft ? 'L' : 'R'}) -> Index: ${index}`);
+
+                        device.on('data', (data) => {
+                            this.handleData(data, jc.path);
+                        });
+
+                        device.on('error', (err) => {
+                            console.error(`🔴 Joy-Con通信エラー (切断検知 path: ${jc.path}):`, err);
+                            this.handleDisconnect(jc.path);
+                        });
+
+                        this.initJoyCon(jc.path);
+                        this.emit('connected', { product: jc.product, index });
+                        console.log(`⏳ キャリブレーションを開始します(${index}) 数秒間静置してください...`);
+                    } catch (connErr) {
+                        console.error('Joy-Con接続エラー:', connErr);
+                        this.handleDisconnect(jc.path);
                     }
-
-                    this.device = new HID.HID(joyconInfo.path);
-
-                    // Joy-Con (L) かどうかを判定してフラグをセット
-                    this.isLeftJoyCon = (joyconInfo.productId === JOYCON_L_PRODUCT_ID);
-                    console.log(`🎮 デバイスタイプ: Joy-Con (${this.isLeftJoyCon ? 'L' : 'R'})`);
-
-                    this.device.on('data', (data) => {
-                        this.handleData(data);
-                    });
-
-                    this.device.on('error', (err) => {
-                        console.error('⚠️ Joy-Con通信エラー (切断検知):', err);
-                        this.handleDisconnect();
-                    });
-
-                    this.device.on('error', (err) => {
-                        console.error('⚠️ Joy-Con通信エラー (切断検知):', err);
-                        this.handleDisconnect();
-                    });
-
-                    // 初期化シーケンス
-                    this.initJoyCon();
-
-                    this.emit('connected', { product: joyconInfo.product });
-
-                    // キャリブレーション開始（接続直後に行う）
-                    this.isCalibrating = true;
-                    this.calibrationData = { gyroX: 0, gyroY: 0, gyroZ: 0, count: 0 };
-                    console.log('⏳ キャリブレーションを開始します（数秒間静置してください）...');
-
-                } catch (connErr) {
-                    console.error('Joy-Con接続エラー:', connErr);
-                    this.handleDisconnect();
                 }
             }
         } catch (e) {
-            // HID.devices() 自体のエラーなど
             console.error('デバイススキャンエラー:', e);
         }
     }
 
-    handleDisconnect() {
-        if (this.device) {
+    handleDisconnect(path) {
+        if (this.devices.has(path)) {
+            const { device, index } = this.devices.get(path);
             try {
-                this.device.removeAllListeners('data');
-                this.device.removeAllListeners('error');
-                this.device.close();
-            } catch (e) {
-                // すでに閉じられている場合など
+                device.removeAllListeners('data');
+                device.removeAllListeners('error');
+                device.close();
+            } catch (e) {}
+            this.devices.delete(path);
+            console.log(`🔌 Joy-Con切断 (Index: ${index}). 再接続待機中...`);
+            this.emit('disconnect', { index });
+            
+            if (this.devices.size === 0) {
+                this.joyconCounter = 0;
             }
         }
-        this.device = null;
-        console.log('🔄 Joy-Con切断。再接続待機中...');
-        this.emit('disconnect');
     }
 
     connect() {
-        // 後方互換性のため
         this.start();
     }
 
-    initJoyCon() {
-        if (!this.device) return;
-
-        console.log('Initializing Joy-Con...');
-
-        // 1. Rumble有効化 + IMU有効化
-        this.sendCommand(0x40, [0x01]);
-        console.log('Sent: Enable IMU (0x40)');
-
-        // 2. モード変更 (Standard Full Mode)
+    initJoyCon(path) {
+        if (!this.devices.has(path)) return;
+        const { device } = this.devices.get(path);
+        
+        console.log(`Initializing Joy-Con (${path})...`);
+        this.sendCommand(device, 0x40, [0x01]);
+        
         setTimeout(() => {
-            this.sendCommand(0x03, [0x30]);
-            console.log('Sent: Switch to Standard Full Mode (0x30)');
+            if (this.devices.has(path)) {
+                this.sendCommand(this.devices.get(path).device, 0x03, [0x30]);
+            }
         }, 100);
     }
 
-    sendCommand(subcommand, args) {
-        if (!this.device) return;
-
-        // グローバルカウンタ: 0x0 から 0xF まで循環
+    sendCommand(device, subcommand, args) {
         this.globalCounter = (this.globalCounter + 1) & 0xF;
-
         const rumbleData = [0x00, 0x01, 0x40, 0x40, 0x00, 0x01, 0x40, 0x40];
-
         const buffer = [
-            0x01,               // Report ID
+            0x01,
             this.globalCounter,
             ...rumbleData,
             subcommand,
             ...args
         ];
-
-        // 64バイトパディング
         while(buffer.length < 49) buffer.push(0);
-
         try {
-            this.device.write(buffer);
-        } catch(e) {
-            console.error('Write error:', e);
-        }
+            device.write(buffer);
+        } catch(e) {}
     }
 
-
-    handleData(data) {
+    handleData(data, path) {
+        if (!this.devices.has(path)) return;
         if (!Buffer.isBuffer(data)) data = Buffer.from(data);
-
-        // データが0x30レポートの標準サイズ(49バイト)より小さい場合は無視
         if (data.length < 49) return;
 
-        let processed = false;
-
         for (let i = 0; i < data.length - 48; i++) {
-            // Report ID が 0x30 の場所を探す
             if (data[i] === 0x30) {
                 const report = data.slice(i, i + 49);
-                this.processReport0x30(report);
-                processed = true;
+                this.processReport0x30(report, path);
                 i += 48;
             }
         }
     }
 
-    processReport0x30(data) {
-        const readInt16LE = (offset) => {
-            return data.readInt16LE(offset);
-        };
+    processReport0x30(data, path) {
+        const info = this.devices.get(path);
+        if (!info) return;
+        const { state, index } = info;
+        const readInt16LE = (offset) => data.readInt16LE(offset);
 
-        // ボタンデータの解析
+        // Buttons parsing
         const b3 = data[3];
-        const buttonsRight = {
-            y:  !!(b3 & 0x01),
-            x:  !!(b3 & 0x02),
-            b:  !!(b3 & 0x04),
-            a:  !!(b3 & 0x08),
-            sr: !!(b3 & 0x10),
-            sl: !!(b3 & 0x20),
-            r:  !!(b3 & 0x40),
-            zr: !!(b3 & 0x80)
-        };
-
+        const buttonsRight = { y: !!(b3 & 0x01), x: !!(b3 & 0x02), b: !!(b3 & 0x04), a: !!(b3 & 0x08), sr: !!(b3 & 0x10), sl: !!(b3 & 0x20), r: !!(b3 & 0x40), zr: !!(b3 & 0x80) };
         const b4 = data[4];
-        const buttonsShared = {
-            minus:   !!(b4 & 0x01),
-            plus:    !!(b4 & 0x02),
-            rStick:  !!(b4 & 0x04),
-            lStick:  !!(b4 & 0x08),
-            home:    !!(b4 & 0x10),
-            capture: !!(b4 & 0x20)
-        };
-
+        const buttonsShared = { minus: !!(b4 & 0x01), plus: !!(b4 & 0x02), rStick: !!(b4 & 0x04), lStick: !!(b4 & 0x08), home: !!(b4 & 0x10), capture: !!(b4 & 0x20) };
         const b5 = data[5];
-        const buttonsLeft = {
-            down:  !!(b5 & 0x01),
-            up:    !!(b5 & 0x02),
-            right: !!(b5 & 0x04),
-            left:  !!(b5 & 0x08),
-            sr:    !!(b5 & 0x10),
-            sl:    !!(b5 & 0x20),
-            l:     !!(b5 & 0x40),
-            zl:    !!(b5 & 0x80)
-        };
-
+        const buttonsLeft = { down: !!(b5 & 0x01), up: !!(b5 & 0x02), right: !!(b5 & 0x04), left: !!(b5 & 0x08), sr: !!(b5 & 0x10), sl: !!(b5 & 0x20), l: !!(b5 & 0x40), zl: !!(b5 & 0x80) };
+        
         const buttons = {
             byte3: data[3], byte4: data[4], byte5: data[5],
             parsed: { right: buttonsRight, shared: buttonsShared, left: buttonsLeft }
         };
 
-        // アナログスティック読み取り (12bit packed)
-        // Left Stick: Bytes 6, 7, 8
-        const l0 = data[6];
-        const l1 = data[7];
-        const l2 = data[8];
+        const l0 = data[6], l1 = data[7], l2 = data[8];
         const stickLX = l0 | ((l1 & 0x0F) << 8);
         const stickLY = ((l1 & 0xF0) >> 4) | (l2 << 4);
 
-        // Right Stick: Bytes 9, 10, 11
-        const r0 = data[9];
-        const r1 = data[10];
-        const r2 = data[11];
+        const r0 = data[9], r1 = data[10], r2 = data[11];
         const stickRX = r0 | ((r1 & 0x0F) << 8);
         const stickRY = ((r1 & 0xF0) >> 4) | (r2 << 4);
 
-        // 正規化 (-1.0 to 1.0)
-        // Center is approx 2048 (0x800). Range is 0 - 4095.
-        // Y軸は上が大きい値かと思いきや、Joy-Conの仕様を確認する必要があるが、
-        // 多くのゲームパッドでは上はマイナス、あるいはプラス。
-        // ここではとりあえず 0-4095 を -1 から 1 に正規化する。
-        // 実際にはキャリブレーションデータが必要だが、簡易的に計算。
-
         const normalize = (val) => (val - 2048) / 2048;
-
         const sticks = {
             left: { x: normalize(stickLX), y: normalize(stickLY) },
             right: { x: normalize(stickRX), y: normalize(stickRY) }
         };
 
-        // 3つのサンプルフレーム
         let sumAccel = { x: 0, y: 0, z: 0 };
         let sumGyro = { x: 0, y: 0, z: 0 };
         const samples = [13, 25, 37];
 
         samples.forEach(offset => {
-            sumAccel.x += readInt16LE(offset);
-            sumAccel.y += readInt16LE(offset + 2);
-            sumAccel.z += readInt16LE(offset + 4);
-
-            sumGyro.x += readInt16LE(offset + 6);
-            sumGyro.y += readInt16LE(offset + 8);
-            sumGyro.z += readInt16LE(offset + 10);
+            sumAccel.x += readInt16LE(offset); sumAccel.y += readInt16LE(offset + 2); sumAccel.z += readInt16LE(offset + 4);
+            sumGyro.x += readInt16LE(offset + 6); sumGyro.y += readInt16LE(offset + 8); sumGyro.z += readInt16LE(offset + 10);
         });
 
-        // 平均値 (Raw)
-        const rawAccel = {
-            x: sumAccel.x / 3,
-            y: sumAccel.y / 3,
-            z: sumAccel.z / 3
-        };
+        const rawAccel = { x: sumAccel.x / 3, y: sumAccel.y / 3, z: sumAccel.z / 3 };
+        const rawGyro = { x: sumGyro.x / 3, y: sumGyro.y / 3, z: sumGyro.z / 3 };
 
-        const rawGyro = {
-            x: sumGyro.x / 3,
-            y: sumGyro.y / 3,
-            z: sumGyro.z / 3
-        };
-
-        if (this.isCalibrating) {
-            this.calibrationData.gyroX += rawGyro.x;
-            this.calibrationData.gyroY += rawGyro.y;
-            this.calibrationData.gyroZ += rawGyro.z;
-            this.calibrationData.count++;
-
-            if (this.calibrationData.count >= CALIBRATION_SAMPLES) {
-                this.offset.gyroX = this.calibrationData.gyroX / CALIBRATION_SAMPLES;
-                this.offset.gyroY = this.calibrationData.gyroY / CALIBRATION_SAMPLES;
-                this.offset.gyroZ = this.calibrationData.gyroZ / CALIBRATION_SAMPLES;
-
-                this.isCalibrating = false;
-                console.log('✅ Calibration Complete!');
-                console.log('Offsets:', this.offset);
+        if (state.isCalibrating) {
+            state.calibrationData.gyroX += rawGyro.x;
+            state.calibrationData.gyroY += rawGyro.y;
+            state.calibrationData.gyroZ += rawGyro.z;
+            state.calibrationData.count++;
+            if (state.calibrationData.count >= CALIBRATION_SAMPLES) {
+                state.offset.gyroX = state.calibrationData.gyroX / CALIBRATION_SAMPLES;
+                state.offset.gyroY = state.calibrationData.gyroY / CALIBRATION_SAMPLES;
+                state.offset.gyroZ = state.calibrationData.gyroZ / CALIBRATION_SAMPLES;
+                state.isCalibrating = false;
+                console.log(`✅ Calibration Complete for Joy-Con ${index}! offsets:`, state.offset);
             }
             return;
         }
 
-        // Convert and Apply Offsets
-        const accel = {
-            x: rawAccel.x / ACCEL_SCALE,
-            y: rawAccel.y / ACCEL_SCALE,
-            z: rawAccel.z / ACCEL_SCALE
-        };
-
-        // Joy-Con (L) の場合、左右(Y軸)と前後(X軸)を反転させて (R) と挙動を合わせる
-        if (this.isLeftJoyCon) {
+        const accel = { x: rawAccel.x / ACCEL_SCALE, y: rawAccel.y / ACCEL_SCALE, z: rawAccel.z / ACCEL_SCALE };
+        if (state.isLeftJoyCon) {
             accel.y = -accel.y;
             accel.x = -accel.x;
         }
 
         const gyro = {
-            x: (rawGyro.x - this.offset.gyroX) / GYRO_SCALE,
-            y: (rawGyro.y - this.offset.gyroY) / GYRO_SCALE,
-            z: (rawGyro.z - this.offset.gyroZ) / GYRO_SCALE
+            x: (rawGyro.x - state.offset.gyroX) / GYRO_SCALE,
+            y: (rawGyro.y - state.offset.gyroY) / GYRO_SCALE,
+            z: (rawGyro.z - state.offset.gyroZ) / GYRO_SCALE
         };
 
-        // デッドゾーン処理
         if (Math.abs(gyro.x) < DEAD_ZONE) gyro.x = 0;
         if (Math.abs(gyro.y) < DEAD_ZONE) gyro.y = 0;
         if (Math.abs(gyro.z) < DEAD_ZONE) gyro.z = 0;
 
-        // 角度計算 (Complementary Filter)
-        const dt = 0.015; // 60Hz approx
+        const dt = 0.015;
         const FILTER_COEFFICIENT = 0.96;
-        const MOVE_SCALE_FACTOR = 1.0;
         const DEG_TO_RAD = Math.PI / 180;
-
-        // Gyro Z (Roll) - 符号を検証して適用 (main.jsのロジックに準拠)
-        // main.jsでは: const gyroZ = data.gyro.z * DEG_TO_RAD * MOVE_SCALE_FACTOR;
-        // ジャイロの回転方向が逆の場合は符号を反転させる必要があるが、まずはそのまま適用
-        const gyroZ_rad = gyro.z * DEG_TO_RAD * MOVE_SCALE_FACTOR;
-
-        // Accel Roll
-        // Joy-Conを立てて持った状態 (Yが上) を基準にする
-        // main.jsのロジック:
-        // let roll = Math.atan2(ax, ay);
-        // roll -= (Math.PI / 2);
+        const gyroZ_rad = gyro.z * DEG_TO_RAD;
 
         let accelRoll = Math.atan2(accel.x, accel.y);
-
-        // 初期値補正: 垂直持ちで0度になるように調整
-        // Math.atan2(0, 1) = 0 (Y軸上が正) → 垂直持ち
-        // そのまま使うと Joy-Con の向きによっては 90度ずれるため、main.js に合わせる
         accelRoll -= (Math.PI / 2);
 
-        // 正規化 (-PI ~ PI)
         while (accelRoll <= -Math.PI) accelRoll += 2 * Math.PI;
         while (accelRoll > Math.PI) accelRoll -= 2 * Math.PI;
 
-        // 角度制限 (左右120度 = 約2.1ラジアン)
         const MAX_ANGLE = 120 * DEG_TO_RAD;
         if (accelRoll > MAX_ANGLE) accelRoll = MAX_ANGLE;
         if (accelRoll < -MAX_ANGLE) accelRoll = -MAX_ANGLE;
 
-        // Init if undefined
-        if (this.currentRoll === undefined) this.currentRoll = accelRoll;
+        if (state.currentRoll === undefined) state.currentRoll = accelRoll;
+        state.currentRoll = (FILTER_COEFFICIENT * (state.currentRoll + gyroZ_rad * dt)) + ((1 - FILTER_COEFFICIENT) * accelRoll);
 
-        // Filter: Right tilt should be negative or positive depending on coord system.
-        // In Three.js: Right tilt is typically negative rotation around Z.
-        // main.js: newRoll = (FILTER * (curr + gyro * dt)) + (1-FILTER)*accel
+        if (Math.abs(state.currentRoll - (state.lastRoll || 0)) > 1.0) state.currentRoll = accelRoll;
+        state.lastRoll = state.currentRoll;
 
-        this.currentRoll = (FILTER_COEFFICIENT * (this.currentRoll + gyroZ_rad * dt)) +
-                      ((1 - FILTER_COEFFICIENT) * accelRoll);
+        const angleDeg = -(state.currentRoll * (180 / Math.PI));
 
-        // 角度飛び防止
-        if (Math.abs(this.currentRoll - (this.lastRoll || 0)) > 1.0) this.currentRoll = accelRoll;
-        this.lastRoll = this.currentRoll;
-
-        // Emit calculated angle for simpler frontend consumption
-        // 符号を反転させる (右傾きを右回転へ)
-        // Joy-Conの座標系とThree.jsの座標系(右手系)の不一致をここで吸収
-        // ユーザー報告「右に傾けたら左になる」→ 符号を反転して送る
-        const angleDeg = -(this.currentRoll * (180 / Math.PI));
-
-        // Debug log (occasionally)
         if (Math.random() < 0.01) {
-             console.log(`[JoyCon] Angle: ${angleDeg.toFixed(1)}° (Roll: ${this.currentRoll.toFixed(2)})`);
+             console.log(`[JoyCon ${index}] Angle: ${angleDeg.toFixed(1)}°`);
         }
 
-        // Also emit raw data if needed
         this.emit('change', {
+            joyconIndex: index,
             buttons,
             accel,
             gyro,
-            angle: angleDeg, // Include calculated angle
-            sticks // 追加: スティックデータ
+            angle: angleDeg,
+            sticks
         });
     }
 }

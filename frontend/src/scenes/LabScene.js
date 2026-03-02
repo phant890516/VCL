@@ -272,11 +272,13 @@ export class LabScene {
 
         this.socket = null; // Socket.io endpoint
         this.targetRotationZ = 0; // ラグ軽減のための目標角度
+        this.flaskTargetRotationZ = 0; // フラスコ用目標角度
 
         // キャリブレーション用
         this.calibrationOffset = 0;
         this.lastRawAngle = 0;
         this.angleHistory = []; // 平均化用バッファ
+        this.flaskAngleHistory = []; // フラスコ用平均化用バッファ
         this.keyDownHandler = null;
 
         this.debugDisplay = null; // デバッグ表示用エレメント
@@ -779,6 +781,15 @@ export class LabScene {
             }
         }
 
+        // --- フラスコの角度を滑らかに更新 (Lerp) ---
+        if (this.flaskGroup) {
+            // 現在の角度から目標角度へ少しずつ近づける (.rotation.z を使うと仮定)
+            const target = this.flaskTargetRotationZ || 0;
+            if (Math.abs(target - this.flaskGroup.rotation.z) > 0.001) {
+                this.flaskGroup.rotation.z += (target - this.flaskGroup.rotation.z) * 0.1;
+            }
+        }
+
         // --- 注ぐモーションのロジック ---
         if (this.testTubeGroup) {
             // 現在のZ軸回転角度を取得
@@ -788,7 +799,16 @@ export class LabScene {
             // 閾値: 60度以上傾けると出るように変更 (ユーザー要望)
             const threshold = THREE.MathUtils.degToRad(60);
 
-            if (rotationZ >= threshold) {
+            // フラスコが安定している(直立している)かチェック
+            let isFlaskStable = true;
+            if (this.flaskGroup) {
+                // フラスコの傾きが10度未満なら安定とみなす
+                if (Math.abs(this.flaskGroup.rotation.z) > THREE.MathUtils.degToRad(10)) {
+                    isFlaskStable = false;
+                }
+            }
+
+            if (rotationZ >= threshold && isFlaskStable) {
                 // 注いでいる状態
                 if (!this.isPouring) {
                     this.isPouring = true;
@@ -1049,53 +1069,68 @@ export class LabScene {
             // data.angle は -180 ~ 180 程度の値が入ると想定
             // 数値変換を確実に行う
             let angleVal = parseFloat(data.angle);
+            const targetDevice = data.target || 'test_tube'; // デフォルトは試験管
 
             // groupが生成される前にデータが来ることがあるのでチェック
-            if (this.testTubeGroup && !isNaN(angleVal)) {
-
-                // 角度の正規化: 0~360度で来る場合も考慮して -180 ~ 180 に収める
+            if (!isNaN(angleVal)) {
+                 // 角度の正規化: 0~360度で来る場合も考慮して -180 ~ 180 に収める
                 // これにより「右に傾けると350度になってしまい、反対側に回ろうとする」等を防ぐ
                 while (angleVal > 180) angleVal -= 360;
                 while (angleVal <= -180) angleVal += 360;
 
-                this.lastRawAngle = angleVal; // 正規化後の値を保存
-
-                // キャリブレーション補正
+                // キャリブレーション補正 (共通オフセットを使用する簡易実装)
+                // 個別のオフセットが必要なら別途変数を設けるべきだが、一旦共有
                 let adjustedAngle = angleVal - this.calibrationOffset;
 
                 // 補正後も再度正規化（オフセットで範囲外に出る可能性があるため）
                 while (adjustedAngle > 180) adjustedAngle -= 360;
                 while (adjustedAngle <= -180) adjustedAngle += 360;
 
-                // --- 移動平均フィルタ (過去5フレームの平均に短縮してラグを減らす) ---
-                this.angleHistory.push(adjustedAngle);
-                if (this.angleHistory.length > 5) {
-                    this.angleHistory.shift();
+                // ターゲット別の処理
+                if (targetDevice === 'test_tube' && this.testTubeGroup) {
+                    this.lastRawAngle = angleVal; // 正規化後の値を保存
+
+                    // --- 移動平均フィルタ (過去5フレームの平均に短縮してラグを減らす) ---
+                    this.angleHistory.push(adjustedAngle);
+                    if (this.angleHistory.length > 5) {
+                        this.angleHistory.shift();
+                    }
+                    // 平均値を計算
+                    let averageAngle = this.angleHistory.reduce((sum, val) => sum + val, 0) / this.angleHistory.length;
+
+                     // 強力なデッドバンド: 直立付近(±5度)は完全に0にする
+                    if (Math.abs(averageAngle) < 5.0) {
+                        averageAngle = 0;
+                    }
+
+                    // 角度制限: -120 ~ 120
+                    let finalAngle = THREE.MathUtils.clamp(averageAngle, -120, 120);
+
+                    // 目標角度を更新 (Degree -> Radian)
+                    // 試験管はZ軸回転で傾ける
+                    this.targetRotationZ = THREE.MathUtils.degToRad(finalAngle);
+
+                } else if (targetDevice === 'flask' && this.flaskGroup) {
+                     // --- フラスコ用移動平均フィルタ ---
+                    if (!this.flaskAngleHistory) this.flaskAngleHistory = [];
+                    this.flaskAngleHistory.push(adjustedAngle);
+                    if (this.flaskAngleHistory.length > 5) {
+                        this.flaskAngleHistory.shift();
+                    }
+                    // 平均値を計算
+                    let averageAngle = this.flaskAngleHistory.reduce((sum, val) => sum + val, 0) / this.flaskAngleHistory.length;
+
+                     // 強力なデッドバンド
+                    if (Math.abs(averageAngle) < 5.0) {
+                        averageAngle = 0;
+                    }
+
+                    // 角度制限: -120 ~ 120 (フラスコも同様に制限)
+                    let finalAngle = THREE.MathUtils.clamp(averageAngle, -120, 120);
+
+                    // 目標角度を更新 (Degree -> Radian)
+                    this.flaskTargetRotationZ = THREE.MathUtils.degToRad(finalAngle);
                 }
-
-                // 平均値を計算
-                let averageAngle = this.angleHistory.reduce((sum, val) => sum + val, 0) / this.angleHistory.length;
-
-                // 強力なデッドバンド: 直立付近(±5度)は完全に0にする
-                if (Math.abs(averageAngle) < 5.0) {
-                    averageAngle = 0;
-                }
-
-                // デバッグ用: 計算された角度をログに出力して確認
-                // console.log(`[LabScene] Final Angle: ${finalAngle}, Raw: ${angleVal}`);
-
-                // --- 稼働範囲の制限 & 符号反転 ---
-                // Joy-Conのジャイロの取り付け向きによっては、逆回転になることがあるため、
-                // ここで符号を反転させる (-1をかける) と改善する場合がある
-                // ユーザーからの「反映されない」というより「見た目がおかしい」場合に備え調整
-                // (前回の修正でinvertedを直したが、もし何も動かないなら0になっている可能性がある)
-
-                // 角度制限: -120 ~ 120
-                let finalAngle = THREE.MathUtils.clamp(averageAngle, -120, 120);
-
-                // 目標角度を更新 (Degree -> Radian)
-                // 試験管はZ軸回転で傾ける
-                this.targetRotationZ = THREE.MathUtils.degToRad(finalAngle);
 
                 // デバッグ表示更新
                 if (this.debugDisplay) {

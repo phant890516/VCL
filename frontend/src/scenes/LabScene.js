@@ -793,9 +793,8 @@ export class LabScene {
         // --- 注ぐモーションのロジック ---
         if (this.testTubeGroup) {
             // 現在のZ軸回転角度を取得
-            // 元々の実装では絶対値を取っていたが、傾ける方向によって正負が変わるため
-            // ちゃんと符号考慮するか、あるいは絶対値で「傾き量」を見る
-            const rotationZ = Math.abs(this.testTubeGroup.rotation.z);
+            const currentRotationZ = this.testTubeGroup.rotation.z;
+
             // 閾値: 60度以上傾けると出るように変更 (ユーザー要望)
             const threshold = THREE.MathUtils.degToRad(60);
 
@@ -808,7 +807,12 @@ export class LabScene {
                 }
             }
 
-            if (rotationZ >= threshold && isFlaskStable) {
+            // 試験管は左側(-3.5)にあるため、右側(フラスコ方向)に傾けた時のみ注ぐ
+            // 右回転は負の値になる (時計回り)
+            // つまり、角度が -60度 以下（例: -90度）の場合に注ぐ
+            const isTiltingRight = currentRotationZ <= -threshold;
+
+            if (isTiltingRight && isFlaskStable) {
                 // 注いでいる状態
                 if (!this.isPouring) {
                     this.isPouring = true;

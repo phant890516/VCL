@@ -640,106 +640,109 @@ export class LabScene {
                         if (this.flaskLiquidMesh.scale.y < 1.2) {
                             this.flaskLiquidMesh.scale.y += 0.005;
                         }
-
-                        // ★混合演出: 色を変化させる (薄い水色 -> 黒っぽい灰色へ)
-                        // フラスコを振って混ぜないと色は変わらないようにする
-                        // 混ぜ進捗 (this.mixingProgress > 0) があれば黒くしていく
-                        if (this.flaskLiquidMesh.material && this.flaskLiquidMesh.material.color) {
-                            if (this.mixingProgress > 0) {
-                                const currentColor = this.flaskLiquidMesh.material.color;
-                                // Lerpで徐々に目標色へ (混ぜれば混ぜるほど黒く)
-                                currentColor.lerp(new THREE.Color(0x222222), 0.05);
-
-                                // 不透明度も上げて「混ざってる感」を出す
-                                if (this.flaskLiquidMesh.material.opacity < 0.95) {
-                                    this.flaskLiquidMesh.material.opacity += 0.005;
-                                }
-                            }
-                        }
-
-                        // ★修正: 二酸化マンガン（粉末）は液体に混ざると徐々に見えなくなり、黒い液体だけになる演出
-                        // 液量(scale.y)が増えるとある程度消え (1.0 -> 0.4)、混ぜる(progress)ともっと消える ( -> 0.0)
-                        if (this.manganeseOxideParticles && this.manganeseOxideParticles.material) {
-                            // 液面がある程度上がったら
-                            if (this.flaskLiquidMesh.scale.y > 0.1) {
-                                // 拡散（Y方向に少し広がる）
-                                const targetScale = this.flaskLiquidMesh.scale.y * 2.0;
-                                if (targetScale > 0.1 && this.manganeseOxideParticles.scale.y < targetScale) {
-                                    this.manganeseOxideParticles.scale.y += 0.01;
-                                    this.manganeseOxideParticles.position.y += 0.005;
-                                }
-
-                                // 1. 液量による不透明度低下 (Max 0.4まで下がる)
-                                // scale.y: 0.1 -> 1.0
-                                let opacityFromPouring = 1.0;
-                                if (this.flaskLiquidMesh.scale.y > 0.2) {
-                                    // 0.2 ~ 1.0 の間で 1.0 ~ 0.4 に変化
-                                    const ratio = Math.min(1.0, (this.flaskLiquidMesh.scale.y - 0.2) / 0.8);
-                                    opacityFromPouring = 1.0 - (ratio * 0.6); // 1.0 -> 0.4
-                                }
-
-                                // 2. 混ぜ進捗による不透明度低下 (Max 0.0まで下がる)
-                                // ユーザー要望: 絶対値で300度動かしたらなくなる (0 -> 300 で 1.0 -> 0.0)
-                                let opacityFromMixing = 1.0;
-                                const TARGET_DEGREE = 300.0;
-
-                                if (this.mixingProgress > 0) {
-                                    // 進捗(度数)が300になるにつれて 1.0 -> 0.0 へ
-                                    const ratio = Math.min(1.0, this.mixingProgress / TARGET_DEGREE);
-                                    opacityFromMixing = 1.0 - ratio;
-                                }
-
-                                // 両方の効果を掛け合わせる（あるいは最小値を取る）
-                                const targetOpacity = Math.min(opacityFromPouring, opacityFromMixing);
-
-                                // 現在の opacity が target より大きければ下げる (フェードアニメーション)
-                                if (this.manganeseOxideParticles.material.opacity > targetOpacity) {
-                                    this.manganeseOxideParticles.material.opacity -= 0.01;
-                                }
-
-                                if (this.manganeseOxideParticles.material.opacity <= 0.01) {
-                                    this.manganeseOxideParticles.material.opacity = 0;
-                                    this.manganeseOxideParticles.visible = false;
-                                }
-                            }
-                        }
-
-                        // ★修正: 混ぜる動作の検知 (フラスコを振って混ぜる)
-                        // フラスコがある程度入っている状態で、フラスコが動かされたら累積角度を加算
-                        if (this.flaskLiquidMesh.scale.y > 0.2) {
-                            const currentFlaskZ = this.flaskGroup.rotation.z;
-                            // 前フレームとの差分（絶対値）ラジアン
-                            const deltaRad = Math.abs(currentFlaskZ - (this.lastFlaskZ || 0));
-                            this.lastFlaskZ = currentFlaskZ;
-
-                            // 微小なブレ（ノイズ）は無視
-                            if (deltaRad > 0.001) {
-                                // ラジアン -> 度数変換して加算
-                                // 絶対値なのでマイナス関係なし。総移動量を積算。
-                                const deltaDeg = THREE.MathUtils.radToDeg(deltaRad);
-                                this.mixingProgress += deltaDeg;
-                                // console.log(`Total Rotation: ${this.mixingProgress.toFixed(1)}`);
-                            }
-                        }
-
-                        // 反応開始 (少し混ぜたら(30度分くらい)泡が出始める)
-                        if (!this.isReacting && this.mixingProgress > 30.0) {
-                        }
-
-                        // 完了判定 (しっかり混ぜたら完了: 閾値 300.0度)
-                        // 注ぐだけでは終わらず、ユーザーのアクションが必要になる
-                        if (this.mixingProgress >= 300.0 && !this.isCompleted) {
-                            this.isCompleted = true;
-                            if (this.onExperimentComplete) {
-                                this.onExperimentComplete('exp_01_o2');
-                            }
-                        }
-                    } // end if check chemical name
-                } // end if flaskLiquidMesh exists
-
+                    }
+                }
             } else {
                 this.isPouring = false;
             }
+
+        // --- 混合・反応ロジック (常時実行: 注いでいない時でも振れば混ざる) ---
+        if (this.experimentId === 'exp_01_o2' && this.flaskLiquidMesh && this.flaskLiquidMesh.visible) {
+
+            // 1. 混ぜる動作の検知 (フラスコを振って混ぜる)
+            // フラスコがある程度入っている状態で、フラスコが動かされたら累積角度を加算
+            if (this.flaskLiquidMesh.scale.y > 0.2) {
+                const currentFlaskZ = this.flaskGroup ? this.flaskGroup.rotation.z : 0;
+                // 前フレームとの差分（絶対値）ラジアン
+                const deltaRad = Math.abs(currentFlaskZ - (this.lastFlaskZ || 0));
+                this.lastFlaskZ = currentFlaskZ;
+
+                // 微小なブレ（ノイズ）は無視
+                if (deltaRad > 0.001) {
+                    // ラジアン -> 度数変換して加算
+                    // 絶対値なのでマイナス関係なし。総移動量を積算。
+                    const deltaDeg = THREE.MathUtils.radToDeg(deltaRad);
+                    this.mixingProgress += deltaDeg;
+                }
+            }
+
+            // 2. 混合によるビジュアル変化
+            // ★混合演出: 色を変化させる (薄い水色 -> 黒っぽい灰色へ)
+            if (this.flaskLiquidMesh.material && this.flaskLiquidMesh.material.color) {
+                if (this.mixingProgress > 0) {
+                    const currentColor = this.flaskLiquidMesh.material.color;
+                    // Lerpで徐々に目標色へ (混ぜれば混ぜるほど黒く)
+                    currentColor.lerp(new THREE.Color(0x222222), 0.05);
+
+                    // 不透明度も上げて「混ざってる感」を出す
+                    if (this.flaskLiquidMesh.material.opacity < 0.95) {
+                        this.flaskLiquidMesh.material.opacity += 0.005;
+                    }
+                }
+            }
+
+            // ★二酸化マンガン（粉末）の消去演出
+            if (this.manganeseOxideParticles && this.manganeseOxideParticles.material) {
+                // 液面がある程度上がったら
+                if (this.flaskLiquidMesh.scale.y > 0.1) {
+                    // 拡散（Y方向に少し広がる）
+                    const targetScale = this.flaskLiquidMesh.scale.y * 2.0;
+                    if (targetScale > 0.1 && this.manganeseOxideParticles.scale.y < targetScale) {
+                        this.manganeseOxideParticles.scale.y += 0.01;
+                        this.manganeseOxideParticles.position.y += 0.005;
+                    }
+
+                    // 1. 液量による不透明度低下 (Max 0.4まで下がる)
+                    let opacityFromPouring = 1.0;
+                    if (this.flaskLiquidMesh.scale.y > 0.2) {
+                        const ratio = Math.min(1.0, (this.flaskLiquidMesh.scale.y - 0.2) / 0.8);
+                        opacityFromPouring = 1.0 - (ratio * 0.6);
+                    }
+
+                    // 2. 混ぜ進捗による不透明度低下 (Max 0.0まで下がる)
+                    let opacityFromMixing = 1.0;
+                    const TARGET_DEGREE = 300.0;
+
+                    if (this.mixingProgress > 0) {
+                        const ratio = Math.min(1.0, this.mixingProgress / TARGET_DEGREE);
+                        opacityFromMixing = 1.0 - ratio;
+                    }
+
+                    // 両方の効果を掛け合わせる
+                    const targetOpacity = Math.min(opacityFromPouring, opacityFromMixing);
+
+                    if (this.manganeseOxideParticles.material.opacity > targetOpacity) {
+                        this.manganeseOxideParticles.material.opacity -= 0.01;
+                    }
+
+                    if (this.manganeseOxideParticles.material.opacity <= 0.01) {
+                        this.manganeseOxideParticles.material.opacity = 0;
+                        this.manganeseOxideParticles.visible = false;
+                    }
+                }
+            }
+
+            // 3. 反応開始 (少し混ぜたら(30度分くらい)泡が出始める)
+            if (!this.isReacting && this.mixingProgress > 30.0) {
+                this.isReacting = true;
+            }
+
+            // 振っているときに泡を出す演出を追加
+            if (this.isReacting && this.flaskLiquidMesh.scale.y > 0.2) {
+                 if (Math.random() > 0.9) {
+                    const bubblePos = new THREE.Vector3(0, 0, 0);
+                    this.spawnReactionBubble(bubblePos);
+                 }
+            }
+
+            // 4. 完了判定
+            if (this.mixingProgress >= 300.0 && !this.isCompleted) {
+                this.isCompleted = true;
+                if (this.onExperimentComplete) {
+                    this.onExperimentComplete('exp_01_o2');
+                }
+            }
+        }
         }
 
         this.updateParticles();

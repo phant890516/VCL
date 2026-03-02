@@ -511,6 +511,13 @@ export function LabView(navigateTo, params = {}) {
                             化学反応式：<br>
                             <span style="font-family: monospace; font-size: 1.3rem; color: #ffeb3b;">2H₂O₂ → 2H₂O + O₂</span>
                         `;
+                    } else if (expId === 'exp_02_co2') {
+                        textEl.innerHTML = `
+                            <strong>石灰石</strong>（炭酸カルシウム）に<strong>塩酸</strong>（塩化水素）を加えると、<strong>二酸化炭素</strong>が発生します。<br><br>
+                            この反応では二酸化炭素が激しく泡となって出てきます。また、石灰石は徐々に溶けていきます。<br><br>
+                            化学反応式：<br>
+                            <span style="font-family: monospace; font-size: 1.3rem; color: #ffeb3b;">CaCO₃ + 2HCl → CaCl₂ + H₂O + CO₂</span>
+                        `;
                     }
                     dialog.style.display = 'block';
 
@@ -540,7 +547,7 @@ export function LabView(navigateTo, params = {}) {
                             mission = '下の「過酸化水素水」ボタンを押して、フラスコ（二酸化マンガン）に注ごう。';
                             break;
                         case 'exp_02_co2':
-                            mission = '周期表から「塩素(Cl)」を選んで、塩酸としてフラスコ（石灰石）に注ごう。';
+                            mission = '下の「塩酸」ボタンを押して、フラスコ（石灰石）に注ぎ、よく振って反応させよう。';
                             break;
                         default:
                             mission = '自由に実験してみよう。';
@@ -554,32 +561,53 @@ export function LabView(navigateTo, params = {}) {
                 // ツールバー設定
                 const toolbar = container.querySelector('#lab-toolbar');
                 if (toolbar) {
-                     // 1. まずツールバーをクリア (デフォルトの非表示ボタンなどを削除)
-                     // ただし、実験ノートボタン等を残したい場合は注意が必要だが、今回はテンプレート側で削除済み
+                     // 1. まずツールバーをクリア
                      toolbar.innerHTML = '';
 
                      // 2. 実験IDに応じたボタンを追加
-                     if (params.id === 'exp_01_o2') {
+                     if (params.id === 'exp_01_o2' || params.id === 'exp_02_co2') {
+
+                         // ボタンがあるときは周期表ボタンを隠す
+                         if (btnPeriodic) btnPeriodic.style.display = 'none';
+
                          const btn = document.createElement('button');
-                         btn.className = 'secondary-btn'; // スタイルクラスは既存のものを使用
-                         btn.textContent = '過酸化水素水';
+                         btn.className = 'secondary-btn';
                          btn.style.width = 'auto';
                          btn.style.padding = '0.5rem 1rem';
-                         btn.onclick = () => {
-                             // 過酸化水素水のデータをセット
-                             // LabSceneはName, Symbol, Appearanceなどを使う
-                             const h2o2 = {
-                                 Name: '過酸化水素水',
-                                 EnglishName: 'Hydrogen Peroxide',
-                                 Symbol: 'H₂O₂',
-                                 Appearance: '無色透明液体',
+
+                         if (params.id === 'exp_01_o2') {
+                             btn.textContent = '過酸化水素水';
+                             btn.onclick = () => {
+                                 const h2o2 = {
+                                     Name: '過酸化水素水',
+                                     EnglishName: 'Hydrogen Peroxide',
+                                     Symbol: 'H₂O₂',
+                                     Appearance: '無色透明液体',
+                                 };
+                                 if (labScene && labScene.setChemical) {
+                                     labScene.setChemical(h2o2);
+                                     if (titleEl) titleEl.textContent = '過酸化水素水';
+                                 }
                              };
-                             if (labScene && labScene.setChemical) {
-                                 labScene.setChemical(h2o2);
-                                 if (titleEl) titleEl.textContent = '過酸化水素水';
-                             }
-                         };
+                         } else if (params.id === 'exp_02_co2') {
+                             btn.textContent = '塩酸';
+                             btn.onclick = () => {
+                                 const hcl = {
+                                     Name: '塩酸',
+                                     EnglishName: 'Hydrochloric Acid',
+                                     Symbol: 'HCl',
+                                     Appearance: '無色透明液体',
+                                 };
+                                 if (labScene && labScene.setChemical) {
+                                     labScene.setChemical(hcl);
+                                     if (titleEl) titleEl.textContent = '塩酸';
+                                 }
+                             };
+                         }
                          toolbar.appendChild(btn);
+                     } else {
+                        // それ以外は周期表ボタンを表示
+                        if (btnPeriodic) btnPeriodic.style.display = 'flex';
                      }
                 }
 

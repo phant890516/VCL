@@ -475,6 +475,59 @@ export class LabScene {
 
             group.add(this.flaskLiquidMesh);
 
+        } else if (this.experimentId === 'exp_02_co2') {
+            // 二酸化炭素発生実験: 石灰石（白色の塊）
+            this.limestoneGroup = new THREE.Group();
+
+            const mat = new THREE.MeshStandardMaterial({
+                color: 0xeeeeee,
+                roughness: 0.9,
+                metalness: 0.1
+            });
+
+            // 石灰石の塊を配置
+            for(let i=0; i<15; i++) {
+                const s = 0.15 + Math.random()*0.1;
+                const geo = new THREE.DodecahedronGeometry(s, 0);
+                const mesh = new THREE.Mesh(geo, mat);
+
+                // フラスコの底に配置 (半径1.0以内)
+                const r = Math.random() * 1.0;
+                const theta = Math.random() * Math.PI * 2;
+
+                mesh.position.set(
+                    r * Math.cos(theta),
+                    0.2 + Math.random()*0.3, // 底から少し浮かす
+                    r * Math.sin(theta)
+                );
+                mesh.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
+                this.limestoneGroup.add(mesh);
+            }
+            this.limestoneGroup.renderOrder = 1;
+            group.add(this.limestoneGroup);
+
+            // 注がれる液体 (塩酸)
+            const liquidHeight = 2.5;
+            const addedLiquidGeo = new THREE.CylinderGeometry(0.6, 1.4, liquidHeight, 32);
+            addedLiquidGeo.translate(0, liquidHeight/2, 0);
+
+            const addedLiquidMat = new THREE.MeshPhysicalMaterial({
+                color: 0xddeeff, // 無色透明に近いがわずかに青み
+                transparent: true,
+                opacity: 0.5,
+                transmission: 0.9,
+                roughness: 0.1,
+                depthWrite: false
+            });
+
+            this.flaskLiquidMesh = new THREE.Mesh(addedLiquidGeo, addedLiquidMat);
+            this.flaskLiquidMesh.visible = false;
+            this.flaskLiquidMesh.scale.y = 0.01;
+            this.flaskLiquidMesh.position.y = 0.1;
+            this.flaskLiquidMesh.renderOrder = 2;
+
+            group.add(this.flaskLiquidMesh);
+
         } else {
             // デフォルト: フラスコの中身（液体：赤色）
             const liquidColor = 0xff0000;
@@ -635,17 +688,36 @@ export class LabScene {
                     }
                 }
 
+
                 // フラスコ内の液面を上昇させる (許可された物質の場合のみ)
-                if (this.currentChemicalName && this.experimentId === 'exp_01_o2' && this.flaskLiquidMesh) {
+                const isExp01 = (this.experimentId === 'exp_01_o2');
+                const isExp02 = (this.experimentId === 'exp_02_co2');
+
+                if (this.currentChemicalName && (isExp01 || isExp02) && this.flaskLiquidMesh) {
                      // 簡易名称チェック
-                    if (this.currentChemicalName.includes('過酸化水素') ||
+                    let isTargetChemical = false;
+
+                    if (isExp01 && (
+                        this.currentChemicalName.includes('過酸化水素') ||
                         this.currentChemicalName === '酸素' ||
                         this.currentChemicalName === '水素'
-                    ) {
+                    )) {
+                        isTargetChemical = true;
+                    }
+
+                    if (isExp02 && (
+                        this.currentChemicalName.includes('塩酸') ||
+                        this.currentChemicalName === '塩化水素' ||
+                        this.currentChemicalName === 'HCL'
+                    )) {
+                        isTargetChemical = true;
+                    }
+
+                    if (isTargetChemical) {
                         this.flaskLiquidMesh.visible = true;
                         // 徐々にスケールアップ (初期高さ2.5 * scale.y)
                         // scale.y = 1.0 でフラスコの肩口あたり
-                        if (this.flaskLiquidMesh.scale.y < 1.2) {
+                        if (this.flaskLiquidMesh.scale.y < 1.0) {
                             this.flaskLiquidMesh.scale.y += 0.005;
                         }
                     }
@@ -655,7 +727,10 @@ export class LabScene {
             }
 
         // --- 混合・反応ロジック (常時実行: 注いでいない時でも振れば混ざる) ---
-        if (this.experimentId === 'exp_01_o2' && this.flaskLiquidMesh && this.flaskLiquidMesh.visible) {
+        // exp_01_o2 または exp_02_co2 で有効
+        const activeExpId = this.experimentId === 'exp_01_o2' ? 'exp_01_o2' : (this.experimentId === 'exp_02_co2' ? 'exp_02_co2' : null);
+
+        if (activeExpId && this.flaskLiquidMesh && this.flaskLiquidMesh.visible) {
 
             // 1. 混ぜる動作の検知 (フラスコを振って混ぜる)
             // フラスコがある程度入っている状態で、フラスコが動かされたら累積角度を加算
@@ -679,8 +754,17 @@ export class LabScene {
             if (this.flaskLiquidMesh.material && this.flaskLiquidMesh.material.color) {
                 if (this.mixingProgress > 0) {
                     const currentColor = this.flaskLiquidMesh.material.color;
-                    // Lerpで徐々に目標色へ (混ぜれば混ぜるほど黒く)
-                    currentColor.lerp(new THREE.Color(0x222222), 0.05);
+
+                    // 実験によって色変化ターゲットを変える
+                    let targetColorHex = 0x222222; // デフォルト黒
+                    if (activeExpId === 'exp_02_co2') {
+                         targetColorHex = 0xffffff; // 石灰水が白濁するなら白だが、発生実験なら透明のまま？
+                         // 「石灰石に塩酸を注ぎ、白く濁る様子や温度変化を観察する。」とある (experiments.js)
+                         // なので白濁させる
+                    }
+
+                    // Lerpで徐々に目標色へ (混ぜれば混ぜるほど変化)
+                    currentColor.lerp(new THREE.Color(targetColorHex), 0.05);
 
                     // 不透明度も上げて「混ざってる感」を出す
                     if (this.flaskLiquidMesh.material.opacity < 0.95) {
@@ -689,8 +773,8 @@ export class LabScene {
                 }
             }
 
-            // ★二酸化マンガン（粉末）の消去演出
-            if (this.manganeseOxideParticles && this.manganeseOxideParticles.material) {
+            // ★二酸化マンガン（粉末）の消去演出 (O2実験のみ)
+            if (activeExpId === 'exp_01_o2' && this.manganeseOxideParticles && this.manganeseOxideParticles.material) {
                 // 液面がある程度上がったら
                 if (this.flaskLiquidMesh.scale.y > 0.1) {
                     // 拡散（Y方向に少し広がる）
@@ -730,6 +814,20 @@ export class LabScene {
                 }
             }
 
+            // ★石灰石（CO2実験）の消去演出
+            if (activeExpId === 'exp_02_co2' && this.limestoneGroup) {
+                 if (this.flaskLiquidMesh.scale.y > 0.2 && this.mixingProgress > 100) {
+                     // 混ぜると溶けていく
+                     this.limestoneGroup.children.forEach(mesh => {
+                         if (mesh.scale.x > 0.01) {
+                             mesh.scale.multiplyScalar(0.99); // 徐々に小さく
+                         } else {
+                             mesh.visible = false;
+                         }
+                     });
+                 }
+            }
+
             // 3. 反応開始 (少し混ぜたら(30度分くらい)泡が出始める)
             if (!this.isReacting && this.mixingProgress > 30.0) {
                 this.isReacting = true;
@@ -747,7 +845,7 @@ export class LabScene {
             if (this.mixingProgress >= 300.0 && !this.isCompleted) {
                 this.isCompleted = true;
                 if (this.onExperimentComplete) {
-                    this.onExperimentComplete('exp_01_o2');
+                    this.onExperimentComplete(activeExpId);
                 }
             }
         }

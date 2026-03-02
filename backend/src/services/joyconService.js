@@ -1,3 +1,12 @@
+/**
+ * ファイル名: backend/src/services/joyconService.js
+ * 概要: Nintendo Joy-Con 通信サービス
+ * 役割:
+ *   - node-hidを使用したJoy-ConとのHID通信
+ *   - 入力レポートの解析とジャイロ値の計算
+ *   - イベントエミッターを通じたデータのブロードキャスト
+ * アーキテクチャ: Service層 (Infrastructure)
+ */
 import { EventEmitter } from 'events';
 import HID from 'node-hid';
 
@@ -55,7 +64,7 @@ export class JoyConService extends EventEmitter {
                         const device = new HID.HID(jc.path);
                         const isLeft = (jc.productId === JOYCON_L_PRODUCT_ID);
                         const index = this.joyconCounter++;
-                        
+
                         const state = {
                             isLeftJoyCon: isLeft,
                             isCalibrating: true,
@@ -102,7 +111,7 @@ export class JoyConService extends EventEmitter {
             this.devices.delete(path);
             console.log(`🔌 Joy-Con切断 (Index: ${index}). 再接続待機中...`);
             this.emit('disconnect', { index });
-            
+
             if (this.devices.size === 0) {
                 this.joyconCounter = 0;
             }
@@ -116,10 +125,10 @@ export class JoyConService extends EventEmitter {
     initJoyCon(path) {
         if (!this.devices.has(path)) return;
         const { device } = this.devices.get(path);
-        
+
         console.log(`Initializing Joy-Con (${path})...`);
         this.sendCommand(device, 0x40, [0x01]);
-        
+
         setTimeout(() => {
             if (this.devices.has(path)) {
                 this.sendCommand(this.devices.get(path).device, 0x03, [0x30]);
@@ -170,7 +179,7 @@ export class JoyConService extends EventEmitter {
         const buttonsShared = { minus: !!(b4 & 0x01), plus: !!(b4 & 0x02), rStick: !!(b4 & 0x04), lStick: !!(b4 & 0x08), home: !!(b4 & 0x10), capture: !!(b4 & 0x20) };
         const b5 = data[5];
         const buttonsLeft = { down: !!(b5 & 0x01), up: !!(b5 & 0x02), right: !!(b5 & 0x04), left: !!(b5 & 0x08), sr: !!(b5 & 0x10), sl: !!(b5 & 0x20), l: !!(b5 & 0x40), zl: !!(b5 & 0x80) };
-        
+
         const buttons = {
             byte3: data[3], byte4: data[4], byte5: data[5],
             parsed: { right: buttonsRight, shared: buttonsShared, left: buttonsLeft }

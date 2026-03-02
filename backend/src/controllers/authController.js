@@ -1,3 +1,11 @@
+/**
+ * ファイル名: backend/src/controllers/authController.js
+ * 概要: 認証機能のコントローラー
+ * 役割:
+ *   - ログイン、新規登録リクエストの処理
+ *   - 入力値の検証とService層へのデータ受け渡し
+ * アーキテクチャ: Controller層
+ */
 import { AuthService } from '../services/authService.js';
 
 const authService = new AuthService();

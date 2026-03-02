@@ -1,3 +1,10 @@
+/**
+ * ファイル名: frontend/src/views/Dashboard/index.js
+ * 概要: ダッシュボード画面（View）の実装
+ * 役割:
+ *   - ログイン後のメインメニュー表示
+ *   - 各機能（実験、トロフィー、設定など）へのナビゲーション
+ */
 import './style.css';
 import template from './template.html?raw';
 

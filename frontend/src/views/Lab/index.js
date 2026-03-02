@@ -1,3 +1,11 @@
+/**
+ * ファイル名: frontend/src/views/Lab/index.js
+ * 概要: 実験室画面（View）の実装
+ * 役割:
+ *   - Three.jsシーン(LabScene)のホスティング
+ *   - UI操作（周期表、説明ダイアログなど）の管理
+ *   - 実験完了イベントのハンドリングとトロフィー付与トリガー
+ */
 import '../../assets/periodicTable.css';
 import { periodicData } from '../../data/periodicData.js';
 import { periodicTableLayout } from '../../data/periodicTable.js';
@@ -424,7 +432,7 @@ export function LabView(navigateTo, params = {}) {
             };
 
             // 実験完了時のコールバック
-            labScene.onExperimentComplete = (expId) => {
+            labScene.onExperimentComplete = async (expId) => {
                 const dialog = container.querySelector('#lab-explanation-dialog');
                 const textEl = container.querySelector('#lab-explanation-text');
                 const btnClose = container.querySelector('#btn-close-explanation');
@@ -432,7 +440,7 @@ export function LabView(navigateTo, params = {}) {
                 // ★トロフィー獲得ロジックの追加
                 if (expId) {
                     const trophyId = `trophy_${expId}`;
-                    const isNew = unlockTrophy(trophyId);
+                    const isNew = await unlockTrophy(trophyId);
                     if (isNew) {
                          // 詳細情報を取得して表示
                          const t = trophiesData.find(item => item.id === trophyId);

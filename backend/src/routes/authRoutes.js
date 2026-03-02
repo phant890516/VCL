@@ -1,3 +1,9 @@
+/**
+ * ファイル名: backend/src/routes/authRoutes.js
+ * 概要: 認証APIのルーティング
+ * 役割:
+ *   - /api/auth/login, /api/auth/register のエンドポイント定義
+ */
 import express from 'express';
 import { AuthController } from '../controllers/authController.js';
 

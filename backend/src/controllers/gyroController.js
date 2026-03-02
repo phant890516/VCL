@@ -1,3 +1,11 @@
+/**
+ * ファイル名: backend/src/controllers/gyroController.js
+ * 概要: ジャイロセンサーデータ処理コントローラー
+ * 役割:
+ *   - ジャイロデータの受信と簡易処理（主にHTTP経由の場合）
+ *   - Joy-Con以外の入力ソース拡張用
+ * アーキテクチャ: Controller層
+ */
 import { GyroService } from '../services/gyroService.js';
 
 export class GyroController {

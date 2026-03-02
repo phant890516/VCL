@@ -1,3 +1,11 @@
+/**
+ * ファイル名: frontend/src/views/Login/index.js
+ * 概要: ログイン画面（View）の実装
+ * 役割:
+ *   - ユーザー認証フォームの表示
+ *   - ログインAPIの呼び出しとトークン管理
+ *   - ダッシュボードへの遷移制御
+ */
 import './style.css';
 import template from './template.html?raw';
 

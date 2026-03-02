@@ -1,3 +1,11 @@
+/**
+ * ファイル名: frontend/src/views/Register/index.js
+ * 概要: 新規登録画面（View）の実装
+ * 役割:
+ *   - ユーザー情報入力フォーム（メール、パスワード、ニックネーム）
+ *   - 生徒/教師ロールの選択UI
+ *   - 登録APIの呼び出し
+ */
 import './style.css';
 import template from './template.html?raw';
 import './toggle_v2.css';

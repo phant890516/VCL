@@ -1,3 +1,11 @@
+/**
+ * ファイル名: frontend/src/scenes/LabScene.js
+ * 概要: 実験の3Dシーン管理（Three.js）
+ * 役割:
+ *   - 3Dモデル（ビーカー、フラスコ、試験管など）の描画と物理挙動
+ *   - 薬品の混合シミュレーションと視覚効果（パーティクル、色変化）
+ *   - Joy-Conジャイロ操作の反映
+ */
 import { io } from 'socket.io-client';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';

@@ -1,4 +1,11 @@
-﻿export const trophiesData = [
+﻿/**
+ * ファイル名: frontend/src/data/trophies.js
+ * 概要: トロフィーの定義データとクライアントサイドAPI
+ * 役割:
+ *   - 全トロフィーのメタデータ（ID, タイトル, 説明）の定義
+ *   - バックエンドAPIとの通信を行うクライアント関数群
+ */
+export const trophiesData = [
     // 既存のトロフィー
     {
         id: 'initial_login',
@@ -112,46 +119,92 @@
     }
 ];
 
-const STORAGE_KEY = 'vcl_user_trophies';
+const API_BASE = 'http://localhost:3000/api/trophies'; // Or /api/trophies
 
 /**
- * 獲得済みトロフィーIDのリストを取得
- * @returns {string[]} トロフィーIDの配列
+ * ユーザーIDを取得 (LocalStorageから)
  */
-export function getAcquiredTrophies() {
+function getCurrentUserId() {
+    const userJson = localStorage.getItem('vcl_user');
+    if (!userJson) return null;
     try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        return stored ? JSON.parse(stored) : [];
+        const user = JSON.parse(userJson);
+        return user.id;
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * トロフィー履歴を取得 (API経由)
+ * @returns {Promise<Array>} 獲得履歴の配列 (非同期)
+ */
+export async function getTrophyHistory() {
+    const userId = getCurrentUserId();
+    if (!userId) return [];
+
+    try {
+        const res = await fetch(`${API_BASE}/history/${userId}`);
+        if (!res.ok) throw new Error('Failed to fetch history');
+        return await res.json();
     } catch (e) {
-        console.error('Failed to load trophies:', e);
+        console.error(e);
         return [];
     }
 }
 
 /**
- * トロフィーを獲得して保存する
- * @param {string} trophyId トロフィーID
- * @returns {boolean} 新規獲得ならtrue、既に持っていたらfalse
+ * 獲得済みトロフィーIDのリストを取得（UI表示用）
+ * @returns {Promise<string[]>} トロフィーIDの配列 (非同期)
  */
-export function unlockTrophy(trophyId) {
-    const current = getAcquiredTrophies();
-    if (current.includes(trophyId)) {
-        return false; // 既に獲得済み
-    }
+export async function getAcquiredTrophies() {
+    const history = await getTrophyHistory();
+    // DBのカラムは { id, user_id, trophy_id, acquired_at }
+    return history.map(item => item.trophy_id);
+}
 
-    // 正しいIDかチェック
+/**
+ * トロフィーを獲得して保存する（API経由）
+ * @param {string} trophyId トロフィーID
+ * @returns {Promise<boolean>} 新規獲得ならtrue (非同期)
+ */
+export async function unlockTrophy(trophyId) {
+    const userId = getCurrentUserId();
+    if (!userId) return false;
+
+    // 有効なIDかチェック
     const isValidId = trophiesData.some(t => t.id === trophyId);
     if (!isValidId) {
         console.warn(`Invalid trophy ID: ${trophyId}`);
         return false;
     }
 
-    current.push(trophyId);
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
-        return true; // 新規獲得
+        const res = await fetch(`${API_BASE}/unlock`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, trophyId })
+        });
+
+        if (res.status === 201) return true; // 新規獲得
+        if (!res.ok) throw new Error('Failed to unlock');
+
+        const data = await res.json();
+        // 既存の場合は { success: false } かもしれないし、{ success: true, trophy: ... } と返しているが、
+        // コントローラーを見ると:
+        // 新規作成時 -> 201 Created -> success: true
+        // 既存の場合 -> 200 OK -> success: false (Already unlocked)
+
+        return data.success === true && res.status === 201; // 正確にはステータスコードで判断
     } catch (e) {
-        console.error('Failed to save trophy:', e);
+        console.error(e);
         return false;
     }
+}
+
+/**
+ * トロフィーデータをリセットする（デバッグ用）
+ */
+export function resetTrophies() {
+    console.warn("Reset trophies not implemented for DB yet");
 }

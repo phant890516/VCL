@@ -1,3 +1,12 @@
+/**
+ * ファイル名: backend/src/services/authService.js
+ * 概要: 認証ビジネスロジック
+ * 役割:
+ *   - パスワードのハッシュ化と検証 (bcrypt)
+ *   - JWTトークンの生成と検証
+ *   - ユーザー登録・ログインロジックの実行
+ * アーキテクチャ: Service層
+ */
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { UserRepository } from '../repositories/userRepository.js';

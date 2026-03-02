@@ -1,3 +1,13 @@
+/**
+ * ファイル名: backend/src/app.js
+ * 概要: バックエンドのエントリーポイント
+ * 役割:
+ *   - Expressサーバーの設定と起動
+ *   - ルーティングの統合
+ *   - データベース接続の初期化
+ *   - Socket.IOサーバーの設定
+ *   - Joy-Con連携サービスの初期化
+ */
 import cors from 'cors';
 import express from 'express';
 import fs from 'fs';
@@ -8,6 +18,7 @@ import { fileURLToPath } from 'url';
 import { initializeDatabase } from './db/database.js';
 import authRoutes from './routes/authRoutes.js';
 import gyroRoutes from './routes/gyroRoutes.js';
+import trophyRoutes from './routes/trophyRoutes.js';
 import { JoyConService } from './services/joyconService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -60,6 +71,7 @@ app.use(express.json());
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/trophies', trophyRoutes);
 app.use('/gyro', gyroRoutes);
 
 app.get('/api/chemicals', (req, res) => {

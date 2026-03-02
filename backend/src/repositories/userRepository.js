@@ -1,3 +1,11 @@
+/**
+ * ファイル名: backend/src/repositories/userRepository.js
+ * 概要: ユーザーデータの永続化層
+ * 役割:
+ *   - users テーブルへのCRUD操作
+ *   - メールアドレスやユーザー名による検索
+ * アーキテクチャ: Repository層
+ */
 import { getDb } from '../db/database.js';
 
 export class UserRepository {

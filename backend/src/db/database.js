@@ -1,3 +1,10 @@
+/**
+ * ファイル名: backend/src/db/database.js
+ * 概要: SQLiteデータベース接続設定
+ * 役割:
+ *   - データベースのオープンとテーブルスキーマの初期化
+ *   - ユーザー、トロフィー、ログイン履歴、ルームなどのテーブル定義
+ */
 import path from 'path';
 import { open } from 'sqlite';
 import sqlite3 from 'sqlite3';
@@ -49,21 +56,23 @@ export async function initializeDatabase() {
             FOREIGN KEY (experiment_id) REFERENCES experiments(id)
         );
 
-        CREATE TABLE IF NOT EXISTS trophies (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            description TEXT NOT NULL,
-            condition_code TEXT NOT NULL,
-            icon_path TEXT
-        );
-
         CREATE TABLE IF NOT EXISTS user_trophies (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
-            trophy_id INTEGER NOT NULL,
+            trophy_id TEXT NOT NULL,
             acquired_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id),
-            FOREIGN KEY (trophy_id) REFERENCES trophies(id),
+            UNIQUE(user_id, trophy_id)
+        );
+
+        -- トロフィー定義はフロントエンドJSで管理するため、DBにはユーザー獲得履歴のみ保存 (シンプル化)
+        -- trophy_id は文字列 (例: 'initial_login') をそのまま保存する
+        CREATE TABLE IF NOT EXISTS user_trophies (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            trophy_id TEXT NOT NULL,
+            acquired_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id),
             UNIQUE(user_id, trophy_id)
         );
 

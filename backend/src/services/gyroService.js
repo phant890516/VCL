@@ -1,3 +1,11 @@
+/**
+ * ファイル名: backend/src/services/gyroService.js
+ * 概要: ジャイロデータの加工・補正ロジック
+ * 役割:
+ *   - 生データのバリデーション
+ *   - ノイズ除去やスムージング（フィルター処理）
+ * アーキテクチャ: Service層
+ */
 export class GyroService {
     /**
      * ジャイロセンサーからのデータを処理する

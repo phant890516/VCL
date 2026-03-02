@@ -1,3 +1,10 @@
+/**
+ * ファイル名: frontend/src/views/SelectMode/index.js
+ * 概要: 実験セレクトモード画面（View）
+ * 役割:
+ *   - 実施可能な実験リストの表示
+ *   - 各実験の開始トリガー（Lab画面への遷移）
+ */
 import { experimentsData } from '../../data/experiments.js';
 import './style.css';
 import template from './template.html?raw';

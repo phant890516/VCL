@@ -1,4 +1,11 @@
-﻿import { getAcquiredTrophies, trophiesData } from '../../data/trophies.js';
+﻿/**
+ * ファイル名: frontend/src/views/Trophy/index.js
+ * 概要: トロフィー一覧画面（View）の実装
+ * 役割:
+ *   - 獲得済みトロフィーと未獲得トロフィーの一覧表示
+ *   - 獲得状況に応じたスタイリングとバッジ表示
+ */
+import { getAcquiredTrophies, trophiesData } from '../../data/trophies.js';
 import './style.css';
 import template from './template.html?raw';
 
@@ -10,9 +17,6 @@ export function TrophyView(navigateTo) {
     container.classList.add('view-container');
     container.innerHTML = template;
 
-    // 最新の獲得済みトロフィーリストを取得
-    const acquiredIds = getAcquiredTrophies();
-
     const listContainer = container.querySelector('#trophy-list');
 
     // リストが空なら作成
@@ -21,45 +25,53 @@ export function TrophyView(navigateTo) {
         return container;
     }
 
-    trophiesData.forEach(trophy => {
-        const isAcquired = acquiredIds.includes(trophy.id);
-        const item = document.createElement('div');
+    // ローディング表示
+    listContainer.innerHTML = '<div style="text-align:center; padding: 20px;">読み込み中...</div>';
 
-        // クラス名を設定 (獲得済みかどうかでスタイル分岐)
-        // CSS側の .trophy-item-locked に対応させる
-        item.className = `trophy-item ${isAcquired ? '' : 'trophy-item-locked'}`;
+    // 最新の獲得済みトロフィーリストを取得 (非同期)
+    getAcquiredTrophies().then(acquiredIds => {
+        listContainer.innerHTML = ''; // ローディング消去
 
-        // 1. アイコン部分
-        const iconDiv = document.createElement('div');
-        iconDiv.className = `trophy-icon ${isAcquired ? 'trophy-icon-unlocked' : 'trophy-icon-locked'}`;
-        // アイコンはSVGを使用
-        iconDiv.innerHTML = isAcquired ? UNLOCKED_ICON : LOCKED_ICON;
+        trophiesData.forEach(trophy => {
+            const isAcquired = acquiredIds.includes(trophy.id);
+            const item = document.createElement('div');
 
-        // テキスト部分
-        const contentDiv = document.createElement('div');
-        contentDiv.className = 'trophy-content';
+            // クラス名を設定 (獲得済みかどうかでスタイル分岐)
+            item.className = `trophy-item ${isAcquired ? '' : 'trophy-item-locked'}`;
 
-        const title = document.createElement('div');
-        title.className = isAcquired ? 'trophy-title-text' : 'trophy-title-text-locked';
-        title.textContent = trophy.title;
+            // 1. アイコン部分
+            const iconDiv = document.createElement('div');
+            iconDiv.className = `trophy-icon ${isAcquired ? 'trophy-icon-unlocked' : 'trophy-icon-locked'}`;
+            iconDiv.innerHTML = isAcquired ? UNLOCKED_ICON : LOCKED_ICON;
 
-        const desc = document.createElement('div');
-        desc.className = 'trophy-desc';
-        desc.textContent = trophy.description;
+            // テキスト部分
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'trophy-content';
 
-        // ステータスバッジ
-        const badge = document.createElement('span');
-        badge.className = `trophy-status-badge ${isAcquired ? 'acquired' : 'locked'}`;
-        badge.textContent = isAcquired ? 'ACQUIRED' : 'LOCKED';
+            const title = document.createElement('div');
+            title.className = isAcquired ? 'trophy-title-text' : 'trophy-title-text-locked';
+            title.textContent = trophy.title;
 
-        contentDiv.appendChild(title);
-        contentDiv.appendChild(desc);
-        contentDiv.appendChild(badge);
+            const desc = document.createElement('div');
+            desc.className = 'trophy-desc';
+            desc.textContent = trophy.description;
 
-        item.appendChild(iconDiv);
-        item.appendChild(contentDiv);
+            // ステータスバッジ
+            const badge = document.createElement('span');
+            badge.className = `trophy-status-badge ${isAcquired ? 'acquired' : 'locked'}`;
+            badge.textContent = isAcquired ? 'ACQUIRED' : 'LOCKED';
 
-        listContainer.appendChild(item);
+            contentDiv.appendChild(title);
+            contentDiv.appendChild(desc);
+            contentDiv.appendChild(badge);
+
+            item.appendChild(iconDiv);
+            item.appendChild(contentDiv);
+
+            listContainer.appendChild(item);
+        });
+    }).catch(err => {
+         listContainer.innerHTML = `<div style="color:red; text-align:center;">エラーが発生しました: ${err.message}</div>`;
     });
 
     return container;

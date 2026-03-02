@@ -2,238 +2,7 @@ import { io } from 'socket.io-client';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-// --- Helper Functions & Constants Start ---
-
-const KEYS = {
-    NAME: ["Name", "名称", "name"],
-    EN_NAME: ["EnglishName", "英語名", "englishName"],
-    APP: ["Appearance", "外観", "appearance"],
-    MP: ["MeltingPoint", "融点", "meltingPoint"],
-    BP: ["BoilingPoint", "沸点", "boilingPoint"],
-    MW: ["MolecularWeight", "分子量", "molecularWeight"],
-    GHS: ["GHSClassification", "GHS分類", "ghsClassification"],
-    CID: ["CID", "PubChem_CID", "cid"]
-};
-
-// 色のマッピング辞書
-const COLOR_KEYWORDS = {
-    "無色": 0xffffff, "透明": 0xffffff, "Colorless": 0xffffff, "Clear": 0xffffff,
-    "白": 0xffffff, "White": 0xffffff,
-    "黒": 0x333333, "Black": 0x333333,
-    "赤": 0xff0000, "Red": 0xff0000,
-    "青": 0x0000ff, "Blue": 0x0000ff,
-    "黄": 0xffff00, "Yellow": 0xffff00, "Amber": 0xffbf00, "Pale yellow": 0xffffcc, "淡黄色": 0xffffcc, "Yellowish": 0xffffcc,
-    "緑": 0x008000, "Green": 0x008000,
-    "橙": 0xffa500, "Orange": 0xffa500,
-    "紫": 0x800080, "Purple": 0x800080, "Violet": 0xee82ee,
-    "茶": 0x8b4513, "Brown": 0x8b4513, "褐色": 0x8b4513,
-    "銀": 0xc0c0c0, "Silver": 0xc0c0c0, "灰": 0x808080, "Gray": 0x808080, "Grey": 0x808080,
-    "ピンク": 0xffc0cb, "Pink": 0xffc0cb, "桃": 0xffc0cb,
-    "金": 0xffd700, "Gold": 0xffd700,
-    "錫白色": 0xddeeff,
-    "白金": 0xe5e4e2
-};
-
-// 元素ごとの固有定義
-const ELEMENT_SPECIFIC_DATA = {
-    "水素": { type: "gas", color: null },
-    "ヘリウム": { type: "gas", color: null },
-    "リチウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "ベリリウム": { type: "metal_ingot", color: 0xcccccc },
-    "ホウ素": { type: "solid_powder", color: 0x333333 },
-    "炭素": { type: "solid_powder", color: 0x111111 },
-    "窒素": { type: "gas", color: null },
-    "酸素": { type: "gas", color: null },
-    "フッ素": { type: "gas", color: 0xffffcc },
-    "ネオン": { type: "gas", color: null },
-    "ナトリウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "マグネシウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "アルミニウム": { type: "metal_ingot", color: 0xddeeff },
-    "ケイ素": { type: "metal_ingot", color: 0x444466 },
-    "リン": { type: "solid_powder", color: 0x8b0000 },
-    "硫黄": { type: "solid_powder", color: 0xffff00 },
-    "塩素": { type: "gas", color: 0xccffcc },
-    "アルゴン": { type: "gas", color: null },
-    "カリウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "カルシウム": { type: "metal_ingot", color: 0xcccccc },
-    "スカンジウム": { type: "metal_ingot", color: 0xcccccc },
-    "チタン": { type: "metal_ingot", color: 0xaaaaaa },
-    "バナジウム": { type: "metal_ingot", color: 0xaaaaaa },
-    "クロム": { type: "metal_ingot", color: 0xaaaaaa },
-    "マンガン": { type: "metal_ingot", color: 0xaaaaaa },
-    "鉄": { type: "metal_ingot", color: 0x888888 },
-    "コバルト": { type: "metal_ingot", color: 0xaaaaaa },
-    "ニッケル": { type: "metal_ingot", color: 0xcccccc },
-    "銅": { type: "metal_ingot", color: 0xb87333 },
-    "亜鉛": { type: "metal_ingot", color: 0xaaaaaa },
-    "ガリウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "ゲルマニウム": { type: "metal_ingot", color: 0x666666 },
-    "ヒ素": { type: "solid_crystal", color: 0x888888 },
-    "セレン": { type: "solid_powder", color: 0x333333 },
-    "臭素": { type: "liquid", color: 0x8b0000 },
-    "クリプトン": { type: "gas", color: null },
-    "ルビジウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "ストロンチウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "イットリウム": { type: "metal_ingot", color: 0xcccccc },
-    "ジルコニウム": { type: "metal_ingot", color: 0xcccccc },
-    "ニオブ": { type: "metal_ingot", color: 0xcccccc },
-    "モリブデン": { type: "metal_ingot", color: 0xcccccc },
-    "テクネチウム": { type: "metal_ingot", color: 0xcccccc },
-    "ルテニウム": { type: "metal_ingot", color: 0xcccccc },
-    "ロジウム": { type: "metal_ingot", color: 0xcccccc },
-    "パラジウム": { type: "metal_ingot", color: 0xcccccc },
-    "銀": { type: "metal_ingot", color: 0xc0c0c0 },
-    "カドミウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "インジウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "スズ": { type: "metal_ingot", color: 0xc0c0c0 },
-    "アンチモン": { type: "metal_ingot", color: 0xc0c0c0 },
-    "テルル": { type: "solid_crystal", color: 0xcccccc },
-    "ヨウ素": { type: "solid_crystal", color: 0x330033 },
-    "キセノン": { type: "gas", color: null },
-    "セシウム": { type: "metal_ingot", color: 0xffd700 },
-    "バリウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "ランタン": { type: "metal_ingot", color: 0xc0c0c0 },
-    "セリウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "プラセオジム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "ネオジム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "プロメチウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "サマリウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "ユウロピウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "ガドリニウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "テルビウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "ジスプロシウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "ホルミウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "エルビウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "ツリウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "イッテルビウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "ルテチウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "ハフニウム": { type: "metal_ingot", color: 0xcccccc },
-    "タンタル": { type: "metal_ingot", color: 0x444455 },
-    "タングステン": { type: "metal_ingot", color: 0xcccccc },
-    "レニウム": { type: "metal_ingot", color: 0xcccccc },
-    "オスミウム": { type: "metal_ingot", color: 0xaaaaee },
-    "イリジウム": { type: "metal_ingot", color: 0xccccc0 },
-    "白金": { type: "metal_ingot", color: 0xe5e4e2 },
-    "金": { type: "metal_ingot", color: 0xffd700 },
-    "水銀": { type: "liquid", color: 0xc0c0c0 },
-    "タリウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "鉛": { type: "metal_ingot", color: 0x888888 },
-    "ビスマス": { type: "metal_ingot", color: 0xffcccc },
-    "ポロニウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "アスタチン": { type: "solid_crystal", color: 0x111111 },
-    "ラドン": { type: "gas", color: null },
-    "フランシウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "ラジウム": { type: "metal_ingot", color: 0xffffff },
-    "アクチニウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "トリウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "プロトアクチニウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "ウラン": { type: "metal_ingot", color: 0xc0c0c0 },
-    "ネプツニウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "プルトニウム": { type: "metal_ingot", color: 0xc0c0c0 },
-    "アメリシウム": { type: "metal_ingot", color: 0xc0c0c0 }
-};
-
-const METAL_KEYWORDS = ["metal", "alloy", "ingot", "金属"];
-
-function getValue(chem, keyArray) {
-    if (!Array.isArray(keyArray)) return chem[keyArray];
-    for (const k of keyArray) {
-        if (chem[k] !== undefined && chem[k] !== null && chem[k] !== "")
-          return chem[k];
-    }
-    return null;
-}
-
-function parseColor(text) {
-    if (!text) return 0xcccccc;
-    if (text.includes("錫白色")) return 0xddeeff;
-    if (text.includes("白金")) return 0xe5e4e2;
-    let safeText = text.replace(/金属/g, "METAL_GENERIC");
-    let foundHex = 0xcccccc;
-    let matched = false;
-    for (const [key, hex] of Object.entries(COLOR_KEYWORDS)) {
-        if (safeText.includes(key)) {
-            foundHex = hex;
-            matched = true;
-        }
-    }
-    if (safeText.includes("無色") || safeText.includes("Colorless")) return 0xffffff;
-    if (safeText.includes("青み")) return 0xaaccff;
-    return matched ? foundHex : 0xeeeeee;
-}
-
-function isTransparent(text) {
-    if (!text) return false;
-    return text.includes("無色") || text.includes("Colorless") || text.includes("透明") || text.includes("Clear") || text.includes("液体");
-}
-
-function determineType(chem) {
-    const name = (getValue(chem, KEYS.NAME) || "").trim();
-    const app = (getValue(chem, KEYS.APP) || "").toLowerCase();
-    const enName = (getValue(chem, KEYS.EN_NAME) || "").trim();
-
-    if (ELEMENT_SPECIFIC_DATA[name]) return ELEMENT_SPECIFIC_DATA[name].type;
-
-    const nameLower = name.toLowerCase();
-    const enNameLower = enName.toLowerCase();
-    const metals = ["iron", "copper", "aluminum", "aluminium", "zinc", "silver", "gold", "lead", "tin", "magnesium", "nickel", "cobalt", "chromium", "manganese", "titanium", "uranium", "plutonium", "鉄", "銅", "アルミニウム", "亜鉛", "銀", "金", "鉛", "スズ", "マグネシウム", "ニッケル", "コバルト", "クロム", "マンガン", "チタン", "ウラン", "プルトニウム"];
-    const nonMetalKeywords = ["oxide", "sulfate", "chloride", "nitrate", "carbonate", "hydroxide", "acid", "water", "solution", "酸化", "硫酸", "塩化", "硝酸", "炭酸", "水酸化", "酸", "水"];
-
-    let isMetalName = false;
-    for (const m of metals) {
-        if (nameLower.includes(m) || enNameLower.includes(m)) {
-            isMetalName = true;
-            break;
-        }
-    }
-    if (!isMetalName) {
-         for (const k of METAL_KEYWORDS) {
-             if (app.includes(k)) {
-                 isMetalName = true;
-                 break;
-             }
-         }
-    } else if (!isMetalName && (app.includes("金属") || app.includes("metal"))) {
-        isMetalName = true;
-    }
-
-    if (isMetalName) {
-        let isCompound = false;
-        for (const nm of nonMetalKeywords) {
-            if (nameLower.includes(nm) || enNameLower.includes(nm)) {
-                isCompound = true; break;
-            }
-        }
-        if (app.includes("liquid") || app.includes("solution") || app.includes("液体") || app.includes("水溶液")) {
-                isCompound = true;
-        }
-        if (!isCompound) return "metal_ingot";
-    }
-
-    if (app.includes("liquid") || app.includes("solution") || app.includes("液体") || app.includes("水溶液")) {
-        return "liquid";
-    }
-
-    if (nameLower.includes("hydroxide") || nameLower.includes("水酸化") || app.includes("pellet") || app.includes("粒") || app.includes("granule")) {
-            return "solid_pellet";
-    }
-
-    if (app.includes("crystal") || app.includes("結晶") || nameLower.includes("sulfate") || nameLower.includes("chloride") || nameLower.includes("nitrate") || nameLower.includes("salt") || nameLower.includes("sugar") || nameLower.includes("alum") || nameLower.includes("硫酸") || nameLower.includes("塩化") || nameLower.includes("硝酸")) {
-        return "solid_crystal";
-    }
-
-    if (app.includes("powder") || app.includes("粉") || nameLower.includes("oxide") || nameLower.includes("carbonate") || nameLower.includes("bicarbonate") || nameLower.includes("酸化") || nameLower.includes("炭酸") || nameLower.includes("重曹")) {
-        return "solid_powder";
-    }
-
-    if (app.includes("solid") || app.includes("固体")) {
-        return "solid_powder";
-    }
-
-    return "liquid";
-}
-
-// --- Helper Functions End ---
+import { determineType, ELEMENT_SPECIFIC_DATA, getValue, isTransparent, KEYS, parseColor } from '../data/chemicalMapping.js';
 
 /**
  * 実験室の3Dシーンを管理するクラス
@@ -269,6 +38,8 @@ export class LabScene {
         this.reactionType = null; // 'oxygen', 'co2' etc.
         this.currentChemicalName = null; // 試験管の中身の名前
         this.flaskLiquidMesh = null; // フラスコ内の追加液体用
+        this.mixingProgress = 0;     // 混ぜ具合
+        this.lastFlaskZ = 0;         // フラスコ回転検知用
 
         this.socket = null; // Socket.io endpoint
         this.targetRotationZ = 0; // ラグ軽減のための目標角度
@@ -282,6 +53,12 @@ export class LabScene {
         this.keyDownHandler = null;
 
         this.debugDisplay = null; // デバッグ表示用エレメント
+
+        // デバッグ情報保持用
+        this.debugInfo = {
+            testTube: { raw: 0, adj: 0, final: 0 },
+            flask: { raw: 0, adj: 0, final: 0 }
+        };
 
         // 初期化処理
         this.init();
@@ -865,19 +642,23 @@ export class LabScene {
                         }
 
                         // ★混合演出: 色を変化させる (薄い水色 -> 黒っぽい灰色へ)
-                        // 初期: 0xaaccff -> 目標: 0x222222 (ほぼ黒)
+                        // フラスコを振って混ぜないと色は変わらないようにする
+                        // 混ぜ進捗 (this.mixingProgress > 0) があれば黒くしていく
                         if (this.flaskLiquidMesh.material && this.flaskLiquidMesh.material.color) {
-                            const currentColor = this.flaskLiquidMesh.material.color;
-                            // Lerpで徐々に目標色へ
-                            currentColor.lerp(new THREE.Color(0x222222), 0.01);
+                            if (this.mixingProgress > 0) {
+                                const currentColor = this.flaskLiquidMesh.material.color;
+                                // Lerpで徐々に目標色へ (混ぜれば混ぜるほど黒く)
+                                currentColor.lerp(new THREE.Color(0x222222), 0.05);
 
-                            // 不透明度も上げて「混ざってる感」を出す
-                            if (this.flaskLiquidMesh.material.opacity < 0.95) {
-                                this.flaskLiquidMesh.material.opacity += 0.002;
+                                // 不透明度も上げて「混ざってる感」を出す
+                                if (this.flaskLiquidMesh.material.opacity < 0.95) {
+                                    this.flaskLiquidMesh.material.opacity += 0.005;
+                                }
                             }
                         }
 
-// ★修正: 二酸化マンガン（粉末）は液体に混ざると徐々に見えなくなり、黒い液体だけになる演出
+                        // ★修正: 二酸化マンガン（粉末）は液体に混ざると徐々に見えなくなり、黒い液体だけになる演出
+                        // 液量(scale.y)が増えるとある程度消え (1.0 -> 0.4)、混ぜる(progress)ともっと消える ( -> 0.0)
                         if (this.manganeseOxideParticles && this.manganeseOxideParticles.material) {
                             // 液面がある程度上がったら
                             if (this.flaskLiquidMesh.scale.y > 0.1) {
@@ -888,28 +669,66 @@ export class LabScene {
                                     this.manganeseOxideParticles.position.y += 0.005;
                                 }
 
-                                // 不透明度を下げて消していく
-                                // 液面がある程度 (0.3以上) になったらフェードアウト開始
-                                if (this.flaskLiquidMesh.scale.y > 0.3) {
-                                    if (this.manganeseOxideParticles.material.opacity > 0) {
-                                        this.manganeseOxideParticles.material.opacity -= 0.01;
-                                        if (this.manganeseOxideParticles.material.opacity < 0) {
-                                            this.manganeseOxideParticles.material.opacity = 0;
-                                            this.manganeseOxideParticles.visible = false;
-                                        }
-                                    }
+                                // 1. 液量による不透明度低下 (Max 0.4まで下がる)
+                                // scale.y: 0.1 -> 1.0
+                                let opacityFromPouring = 1.0;
+                                if (this.flaskLiquidMesh.scale.y > 0.2) {
+                                    // 0.2 ~ 1.0 の間で 1.0 ~ 0.4 に変化
+                                    const ratio = Math.min(1.0, (this.flaskLiquidMesh.scale.y - 0.2) / 0.8);
+                                    opacityFromPouring = 1.0 - (ratio * 0.6); // 1.0 -> 0.4
+                                }
+
+                                // 2. 混ぜ進捗による不透明度低下 (Max 0.0まで下がる)
+                                // ユーザー要望: 絶対値で300度動かしたらなくなる (0 -> 300 で 1.0 -> 0.0)
+                                let opacityFromMixing = 1.0;
+                                const TARGET_DEGREE = 300.0;
+
+                                if (this.mixingProgress > 0) {
+                                    // 進捗(度数)が300になるにつれて 1.0 -> 0.0 へ
+                                    const ratio = Math.min(1.0, this.mixingProgress / TARGET_DEGREE);
+                                    opacityFromMixing = 1.0 - ratio;
+                                }
+
+                                // 両方の効果を掛け合わせる（あるいは最小値を取る）
+                                const targetOpacity = Math.min(opacityFromPouring, opacityFromMixing);
+
+                                // 現在の opacity が target より大きければ下げる (フェードアニメーション)
+                                if (this.manganeseOxideParticles.material.opacity > targetOpacity) {
+                                    this.manganeseOxideParticles.material.opacity -= 0.01;
+                                }
+
+                                if (this.manganeseOxideParticles.material.opacity <= 0.01) {
+                                    this.manganeseOxideParticles.material.opacity = 0;
+                                    this.manganeseOxideParticles.visible = false;
                                 }
                             }
                         }
 
-                        // 反応開始 (ある程度液面が溜まったら)
-                        // scale.y が 0.4 (高さ1.0程度) を超えたあたりで反応開始
-                        if (!this.isReacting && this.flaskLiquidMesh.scale.y > 0.4) {
-                            this.startReaction('oxygen');
+                        // ★修正: 混ぜる動作の検知 (フラスコを振って混ぜる)
+                        // フラスコがある程度入っている状態で、フラスコが動かされたら累積角度を加算
+                        if (this.flaskLiquidMesh.scale.y > 0.2) {
+                            const currentFlaskZ = this.flaskGroup.rotation.z;
+                            // 前フレームとの差分（絶対値）ラジアン
+                            const deltaRad = Math.abs(currentFlaskZ - (this.lastFlaskZ || 0));
+                            this.lastFlaskZ = currentFlaskZ;
+
+                            // 微小なブレ（ノイズ）は無視
+                            if (deltaRad > 0.001) {
+                                // ラジアン -> 度数変換して加算
+                                // 絶対値なのでマイナス関係なし。総移動量を積算。
+                                const deltaDeg = THREE.MathUtils.radToDeg(deltaRad);
+                                this.mixingProgress += deltaDeg;
+                                // console.log(`Total Rotation: ${this.mixingProgress.toFixed(1)}`);
+                            }
                         }
 
-                        // 完全に混ざり切ったら (scale.y が 1.0 を超えたら)
-                        if (this.flaskLiquidMesh.scale.y > 1.0 && !this.isCompleted) {
+                        // 反応開始 (少し混ぜたら(30度分くらい)泡が出始める)
+                        if (!this.isReacting && this.mixingProgress > 30.0) {
+                        }
+
+                        // 完了判定 (しっかり混ぜたら完了: 閾値 300.0度)
+                        // 注ぐだけでは終わらず、ユーザーのアクションが必要になる
+                        if (this.mixingProgress >= 300.0 && !this.isCompleted) {
                             this.isCompleted = true;
                             if (this.onExperimentComplete) {
                                 this.onExperimentComplete('exp_01_o2');
@@ -925,6 +744,25 @@ export class LabScene {
 
         this.updateParticles();
         this.updateReactionParticles(); // 反応エフェクト更新
+
+        // デバッグ表示更新
+        if (this.debugDisplay && this.debugInfo) {
+             const tData = this.debugInfo.testTube;
+             const fData = this.debugInfo.flask;
+             // 混ぜ進捗を表示: this.mixingProgress (0 ~ 300)
+             this.debugDisplay.innerHTML = `
+                 <div style="margin-bottom:5px; border-bottom:1px solid #555;"><strong>TestTube (JoyCon L)</strong><br>
+                 Raw: ${tData.raw.toFixed(1)}° / Adj: ${tData.adj.toFixed(1)}°<br>
+                 Final: <span style="color:cyan">${tData.final.toFixed(1)}°</span></div>
+
+                 <div style="margin-bottom:5px; border-bottom:1px solid #555;"><strong>Flask (JoyCon R)</strong><br>
+                 Raw: ${fData.raw.toFixed(1)}° / Adj: ${fData.adj.toFixed(1)}°<br>
+                 Final: <span style="color:cyan">${fData.final.toFixed(1)}°</span></div>
+
+                 <div style="color: yellow;"><strong>Quest Mixing</strong><br>
+                 Progress: ${this.mixingProgress.toFixed(1)} / 300.0</div>
+             `;
+        }
 
         if (this.renderer && this.scene && this.camera) {
             this.renderer.render(this.scene, this.camera);
@@ -1091,10 +929,12 @@ export class LabScene {
                 while (adjustedAngle <= -180) adjustedAngle += 360;
 
                 // ターゲット別の処理
+                let finalAngle = 0;
+
                 if (targetDevice === 'test_tube' && this.testTubeGroup) {
                     this.lastRawAngle = angleVal; // 正規化後の値を保存
 
-                    // --- 移動平均フィルタ (過去5フレームの平均に短縮してラグを減らす) ---
+                    // --- 試験管用移動平均フィルタ ---
                     this.angleHistory.push(adjustedAngle);
                     if (this.angleHistory.length > 5) {
                         this.angleHistory.shift();
@@ -1108,11 +948,20 @@ export class LabScene {
                     }
 
                     // 角度制限: -120 ~ 120
-                    let finalAngle = THREE.MathUtils.clamp(averageAngle, -120, 120);
+                    finalAngle = THREE.MathUtils.clamp(averageAngle, -120, 120);
 
                     // 目標角度を更新 (Degree -> Radian)
                     // 試験管はZ軸回転で傾ける
                     this.targetRotationZ = THREE.MathUtils.degToRad(finalAngle);
+
+                    // デバッグ情報更新
+                    if (this.debugInfo) {
+                        this.debugInfo.testTube = {
+                            raw: angleVal,
+                            adj: adjustedAngle,
+                            final: finalAngle
+                        };
+                    }
 
                 } else if (targetDevice === 'flask' && this.flaskGroup) {
                      // --- フラスコ用移動平均フィルタ ---
@@ -1130,20 +979,23 @@ export class LabScene {
                     }
 
                     // 角度制限: -120 ~ 120 (フラスコも同様に制限)
-                    let finalAngle = THREE.MathUtils.clamp(averageAngle, -120, 120);
+                    finalAngle = THREE.MathUtils.clamp(averageAngle, -120, 120);
 
                     // 目標角度を更新 (Degree -> Radian)
                     this.flaskTargetRotationZ = THREE.MathUtils.degToRad(finalAngle);
+
+                    // デバッグ情報更新
+                    if (this.debugInfo) {
+                        this.debugInfo.flask = {
+                            raw: angleVal,
+                            adj: adjustedAngle,
+                            final: finalAngle
+                        };
+                    }
                 }
 
-                // デバッグ表示更新
-                if (this.debugDisplay) {
-                    this.debugDisplay.innerHTML = `
-                        Raw: ${angleVal.toFixed(1)}°<br>
-                        Adj: ${adjustedAngle.toFixed(1)}°<br>
-                        Final: ${finalAngle.toFixed(1)}°
-                    `;
-                }
+                // デバッグ表示更新はanimateループで行うためここではデータ更新のみ
+
 
             } else {
                 // console.warn('Gyro update skipped:', { group: !!this.testTubeGroup, angle: data.angle });

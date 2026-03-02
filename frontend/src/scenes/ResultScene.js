@@ -15,11 +15,12 @@ export function ResultScene(navigateTo, params) {
   card.appendChild(title);
 
   // 実験ID表示（本来は実験名などをDB/Configから引く）
-  const subTitle = document.createElement('p');
-  subTitle.textContent = `Experiment: ${params?.experimentId || '-'}`;
-  card.appendChild(subTitle);
+  // const subTitle = document.createElement('p');
+  // subTitle.textContent = `Experiment: ${params?.experimentId || '-'}`;
+  // card.appendChild(subTitle);
 
   // スコア表示セクション
+  /*
   const scoreSection = document.createElement('div');
   scoreSection.className = 'score-section';
 
@@ -50,6 +51,7 @@ export function ResultScene(navigateTo, params) {
     feedbackList.appendChild(li);
   });
   card.appendChild(feedbackList);
+  */
 
   // アクションボタンエリア
   const actionArea = document.createElement('div');

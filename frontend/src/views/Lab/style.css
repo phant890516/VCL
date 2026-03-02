@@ -28,6 +28,78 @@
 }
 
 .lab-timer-area {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #e0e0e0;
+    margin-top: 10px;
+    background: rgba(0,0,0,0.3);
+    padding: 5px 10px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+/* トロフィー通知 */
+.trophy-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #fff9c4, #fff176);
+    border-left: 5px solid #fbc02d;
+    border-radius: 8px;
+    padding: 15px 20px;
+    display: none; /* 初期状態は非表示 (popoverでない場合) */
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    /* Popover API使用時は transform が効かない場合があるため inset or margin で制御 */
+    transform: translateX(120%);
+    transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    z-index: 9999;
+    min-width: 300px;
+    color: #333;
+    /* Popoverスタイル解除 */
+    border: none;
+    margin: 0;
+    /* default styles often include padding/margin/border for popover */
+}
+
+/* Popover Open State */
+.trophy-toast:popover-open {
+    display: flex;
+    margin: 0; /* Reset popover margin */
+    inset: auto; /* Reset inset */
+    top: 20px;
+    right: 20px;
+}
+/* If popover not supported, .show handles display via JS setting style.display='flex' */
+
+.trophy-toast.show {
+    display: flex; /* Ensure it's visible */
+    transform: translateX(0);
+}
+
+.trophy-toast-icon {
+    font-size: 2em;
+}
+
+.trophy-toast-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.trophy-toast-title {
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #f57f17;
+}
+
+.trophy-toast-body {
+    font-size: 0.9em;
+    color: #424242;
+}
+
+/* 解説ダイアログ */
     color: #00e676;
 }
 

@@ -25,7 +25,7 @@ export class TrophyController {
         }
     }
 
-    async unlock(req, res) {
+    async unlockTrophy(req, res) {
         try {
             const { userId, trophyId } = req.body;
             if (!userId || !trophyId) {

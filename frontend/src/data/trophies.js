@@ -5,6 +5,7 @@
  *   - 全トロフィーのメタデータ（ID, タイトル, 説明）の定義
  *   - バックエンドAPIとの通信を行うクライアント関数群
  */
+
 export const trophiesData = [
     // 既存のトロフィー
     {
@@ -119,86 +120,80 @@ export const trophiesData = [
     }
 ];
 
-const API_BASE = 'http://localhost:3000/api/trophies'; // Or /api/trophies
+const API_BASE = 'http://localhost:3000/api/trophies';
+const OFFLINE_STORAGE_KEY = 'vcl_user_trophies_offline';
 
 /**
- * ユーザーIDを取得 (LocalStorageから)
+ * ローカルストレージから現在のユーザーIDを取得（デバッグ用・将来用）
+ * @returns {number|null} ユーザーID
  */
 function getCurrentUserId() {
-    const userJson = localStorage.getItem('vcl_user');
-    if (!userJson) return null;
     try {
-        const user = JSON.parse(userJson);
-        return user.id;
-    } catch {
+        const user = localStorage.getItem('vcl_user');
+        if (!user) return null;
+        const parsed = JSON.parse(user);
+        if (!parsed || !parsed.id) {
+             if (parsed.username === 'Demo User') return 999;
+             return null;
+        }
+        return parsed.id;
+    } catch (e) {
         return null;
     }
 }
 
 /**
- * トロフィー履歴を取得 (API経由)
- * @returns {Promise<Array>} 獲得履歴の配列 (非同期)
+ * 獲得済みトロフィーIDのリストを取得
+ * 完全ローカルストレージ動作に変更
+ * @returns {Promise<string[]>} トロフィーIDの配列
  */
-export async function getTrophyHistory() {
-    const userId = getCurrentUserId();
-    if (!userId) return [];
-
+export async function getAcquiredTrophies() {
     try {
-        const res = await fetch(`${API_BASE}/history/${userId}`);
-        if (!res.ok) throw new Error('Failed to fetch history');
-        return await res.json();
+        // ユーザーIDに関係なく、ブラウザ固有のストレージを使用する
+        // (以前のロジックだとユーザーごとのDB保存だったが、今回はブラウザ保存優先)
+        const stored = localStorage.getItem(OFFLINE_STORAGE_KEY);
+        const trophies = stored ? JSON.parse(stored) : [];
+        console.log('[Trophy] Loaded local trophies:', trophies);
+        return trophies;
     } catch (e) {
-        console.error(e);
+        console.error('[Trophy] Failed to load local trophies:', e);
         return [];
     }
 }
 
 /**
- * 獲得済みトロフィーIDのリストを取得（UI表示用）
- * @returns {Promise<string[]>} トロフィーIDの配列 (非同期)
- */
-export async function getAcquiredTrophies() {
-    const history = await getTrophyHistory();
-    // DBのカラムは { id, user_id, trophy_id, acquired_at }
-    return history.map(item => item.trophy_id);
-}
-
-/**
- * トロフィーを獲得して保存する（API経由）
+ * トロフィーを獲得して保存する
+ * 完全ローカルストレージ動作に変更
  * @param {string} trophyId トロフィーID
- * @returns {Promise<boolean>} 新規獲得ならtrue (非同期)
+ * @returns {Promise<boolean>} 新規獲得ならtrue、既に持っていたらfalse
  */
 export async function unlockTrophy(trophyId) {
-    const userId = getCurrentUserId();
-    if (!userId) return false;
+    console.log(`[Trophy] unlockTrophy called for: ${trophyId}`);
 
-    // 有効なIDかチェック
+    // 正しいIDかチェック
     const isValidId = trophiesData.some(t => t.id === trophyId);
     if (!isValidId) {
-        console.warn(`Invalid trophy ID: ${trophyId}`);
+        console.warn(`[Trophy] Invalid trophy ID: ${trophyId}`);
         return false;
     }
 
     try {
-        const res = await fetch(`${API_BASE}/unlock`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId, trophyId })
-        });
+        // ローカルストレージから読み込み
+        const current = await getAcquiredTrophies();
 
-        if (res.status === 201) return true; // 新規獲得
-        if (!res.ok) throw new Error('Failed to unlock');
+        if (current.includes(trophyId)) {
+            console.log('[Trophy] Already acquired (Local)');
+            return false;
+        }
 
-        const data = await res.json();
-        // 既存の場合は { success: false } かもしれないし、{ success: true, trophy: ... } と返しているが、
-        // コントローラーを見ると:
-        // 新規作成時 -> 201 Created -> success: true
-        // 既存の場合 -> 200 OK -> success: false (Already unlocked)
+        // 保存
+        current.push(trophyId);
+        localStorage.setItem(OFFLINE_STORAGE_KEY, JSON.stringify(current));
+        console.log('[Trophy] Saved locally:', trophyId);
+        return true; // 新規獲得
 
-        return data.success === true && res.status === 201; // 正確にはステータスコードで判断
     } catch (e) {
-        console.error(e);
-        return false;
+        console.error('[Trophy] Error saving trophy locally:', e);
     }
 }
 

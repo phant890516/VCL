@@ -52,7 +52,7 @@ export function LoginView(navigateTo) {
                 if (email === 'demo@example.com' && password === 'password123') {
                     console.warn('Backend seems down, using fallback login');
                     localStorage.setItem('vcl_token', 'mock_token');
-                    localStorage.setItem('vcl_user', JSON.stringify({ username: 'Demo User', role: 'student' }));
+                    localStorage.setItem('vcl_user', JSON.stringify({ id: 999, username: 'Demo User', role: 'student' }));
                     navigateTo('/dashboard');
                     return;
                 }

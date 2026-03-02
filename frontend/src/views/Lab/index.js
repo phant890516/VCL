@@ -19,6 +19,46 @@ export function LabView(navigateTo, params = {}) {
     container.classList.add('view-container');
     container.innerHTML = template;
 
+    const toast = document.createElement('div');
+    toast.className = 'trophy-toast';
+    // popover属性を追加
+    try { toast.setAttribute('popover', 'manual'); } catch(e) {}
+    toast.innerHTML = `
+        <div class="trophy-toast-icon">🏆</div>
+        <div class="trophy-toast-content">
+            <span class="trophy-toast-title">トロフィー獲得！</span>
+            <span class="trophy-toast-body"></span>
+        </div>
+    `;
+    // 親要素(container)に追加 (Top Layer APIが効くならこれでOK)
+    container.appendChild(toast);
+
+    // 通知を表示するヘルパー関数
+    function showTrophyToast(title) {
+        const body = toast.querySelector('.trophy-toast-body');
+        if(body) body.textContent = `「${title}」`;
+
+        // Popover表示 (サポートされている場合)
+        if (toast.showPopover) {
+             try { toast.showPopover(); } catch(e) { }
+        } else {
+             // Fallback: z-indexで頑張る (ただしダイアログの裏になる可能性あり)
+             toast.style.display = 'flex';
+        }
+
+        // アニメーション
+        requestAnimationFrame(() => {
+            toast.classList.add('show');
+        });
+
+        // 5秒後に消す
+        setTimeout(() => {
+            toast.classList.remove('show');
+            if(toast.hidePopover) try { toast.hidePopover(); } catch(e) {}
+            else toast.style.display = 'none';
+        }, 5000);
+    }
+
     // タイトル設定
     const titleEl = container.querySelector('#lab-title-display');
     if (titleEl) {
@@ -389,6 +429,7 @@ export function LabView(navigateTo, params = {}) {
     if (btnFinish) {
         btnFinish.addEventListener('click', () => {
             clearInterval(intervalId);
+            // toastはcontext内なので自動削除される
             if (labScene) labScene.dispose();
             navigateTo('result', { score: 'S' });
         });
@@ -433,6 +474,8 @@ export function LabView(navigateTo, params = {}) {
 
             // 実験完了時のコールバック
             labScene.onExperimentComplete = async (expId) => {
+                console.log(`[LabView] Experiment Completed: ${expId}`);
+
                 const dialog = container.querySelector('#lab-explanation-dialog');
                 const textEl = container.querySelector('#lab-explanation-text');
                 const btnClose = container.querySelector('#btn-close-explanation');
@@ -440,16 +483,24 @@ export function LabView(navigateTo, params = {}) {
                 // ★トロフィー獲得ロジックの追加
                 if (expId) {
                     const trophyId = `trophy_${expId}`;
-                    const isNew = await unlockTrophy(trophyId);
-                    if (isNew) {
-                         // 詳細情報を取得して表示
-                         const t = trophiesData.find(item => item.id === trophyId);
-                         const title = t ? t.title : '実験達成！';
-                         alert(`🏆 トロフィー獲得！\n\n「${title}」\n\n新しい実績が解除されました！`);
-                    } else {
-                         // already unlocked
-                         console.log(`Trophy ${trophyId} already acquired.`);
-                    }
+                    console.log(`[LabView] Requesting trophy unlock: ${trophyId}`);
+
+                    // unlockTrophyは非同期なのでawaitする
+                    // async関数内ではないため、thenチェーンを使用するか、即時実行関数でラップするのが望ましいが、
+                    // ここは簡単なthenチェーンで実装
+                    unlockTrophy(trophyId).then(isNew => {
+                        if (isNew) {
+                             // 詳細情報を取得して表示
+                             const t = trophiesData.find(item => item.id === trophyId);
+                             const title = t ? t.title : '実験達成！';
+
+                             // 以前のalertを廃止し、Toast通知を表示
+                             // alert(`🏆 トロフィー獲得！\n\n「${title}」\n\n新しい実績が解除されました！`);
+                             showTrophyToast(title);
+                        } else {
+                             console.log(`Trophy ${trophyId} already acquired (or failed).`);
+                        }
+                    });
                 }
 
                 if (dialog && textEl) {

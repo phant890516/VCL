@@ -7,6 +7,7 @@ import { initRouter, navigateTo, registerRoute } from './router.js';
 // Views
 import { initSidebar } from './components/Sidebar.js';
 import { ResultScene } from './scenes/ResultScene.js';
+import { ConnectionGuideView } from './views/ConnectionGuide/index.js';
 import { DashboardView } from './views/Dashboard/index.js';
 import { IdeaView } from './views/Idea/index.js';
 import { LabView } from './views/Lab/index.js'; // Ensure this path is correct
@@ -50,6 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     registerRoute('/dashboard', wrapView(DashboardView));
     registerRoute('/home', wrapView(DashboardView)); // alias
+
+    registerRoute('/connection-guide', wrapView(ConnectionGuideView));
 
     registerRoute('/select-mode', wrapView(SelectModeView));
     registerRoute('/quest', wrapView(SelectModeView)); // alias

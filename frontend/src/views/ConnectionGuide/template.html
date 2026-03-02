@@ -1,0 +1,105 @@
+﻿<div class="connection-guide-layout">
+    <!-- Left Panel: Instructions -->
+    <div class="guide-panel left-panel">
+        <div class="panel-header">
+            <h1 class="guide-title">
+                <svg class="title-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                セットアップ手順
+            </h1>
+            <p class="guide-subtitle">実験を始めるための準備を行います</p>
+        </div>
+
+        <div class="step-container">
+            <div class="step-card" id="step-pair">
+                <div class="step-status">
+                    <div class="step-checkbox"></div>
+                </div>
+                <div class="step-content">
+                    <h3>ペアリングモードにする</h3>
+                    <p>Joy-Con側面の<strong>シンクロボタン</strong>を長押ししてください。<br>LEDが流れるように点滅します。</p>
+                </div>
+                <!-- Bluetooth Icon -->
+                <div class="step-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#3498db" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6.5 6.5l11 11L12 23V1l5.5 5.5-11 11z"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="step-card" id="step-connect">
+                <div class="step-status">
+                    <div class="step-checkbox"></div>
+                </div>
+                <div class="step-content">
+                    <h3>PCと接続する</h3>
+                    <p>PCの設定からデバイスを追加し、<strong>Joy-Con (L/R)</strong>を選択して接続します。</p>
+                </div>
+                <!-- PC Icon -->
+                <div class="step-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#9b59b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                         <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                         <line x1="8" y1="21" x2="16" y2="21"></line>
+                         <line x1="12" y1="17" x2="12" y2="21"></line>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="step-card" id="step-motion">
+                <div class="step-status">
+                    <div class="step-checkbox"></div>
+                </div>
+                <div class="step-content">
+                    <h3>動作確認</h3>
+                    <p>接続されると右側のJoy-Conが動き出します。<br>傾きが正しく反映されるか確認してください。</p>
+                </div>
+                <!-- Check Icon -->
+                <div class="step-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#2ecc71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                         <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Panel: Status & Visualization -->
+    <div class="guide-panel right-panel">
+        <div class="status-header">
+            <div class="connection-badge disconnected" id="status-badge">
+                <span class="badge-dot"></span>
+                <span class="badge-text">未接続</span>
+            </div>
+        </div>
+
+        <div class="visualizer-container">
+            <!-- Joy-Con 3D Visualization -->
+            <div id="joycon-3d-container" class="joycon-3d-container"></div>
+
+            <div class="sensor-info-box">
+                <div class="sensor-label">TILT ANGLE</div>
+                <div class="sensor-value" id="angle-value">WAITING...</div>
+            </div>
+        </div>
+
+        <div class="action-area">
+            <p class="visualizer-hint">
+                Joy-Conを傾けて動作を確認してください<br>
+                <small class="hint-small">※接続されると「実験を開始する」ボタンが有効になります</small>
+            </p>
+
+            <button class="btn-start" id="btn-start-tutorial" disabled>
+                <span>実験を開始する</span>
+                <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+            </button>
+            <button class="btn-skip" id="btn-skip-connection">
+                スキップして進む (開発用)
+            </button>
+        </div>
+    </div>
+</div>

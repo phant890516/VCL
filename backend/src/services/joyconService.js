@@ -33,7 +33,15 @@ export class JoyConService extends EventEmitter {
     start() {
         if (this.pollingTimer) return;
         console.log(`Joy-Conサービスを開始します(監視間隔: ${POLLING_INTERVAL_MS}ms)`);
-        this.tryConnect();
+
+        // 初回接続試行（エラーでも停止しないようにキャッチ）
+        try {
+            this.tryConnect();
+        } catch (e) {
+            console.error('初回Joy-Con接続試行中にエラーが発生しました(無視して監視を継続します):', e);
+        }
+
+        // 定期監視を開始
         this.pollingTimer = setInterval(() => {
             this.tryConnect();
         }, POLLING_INTERVAL_MS);
@@ -51,11 +59,16 @@ export class JoyConService extends EventEmitter {
 
     tryConnect() {
         try {
-            const hidDevices = HID.devices();
+            const hidDevices = HID.devices() || [];
             const joycons = hidDevices.filter(d =>
                 (d.vendorId === VENDOR_ID) &&
                 (d.productId === JOYCON_L_PRODUCT_ID || d.productId === JOYCON_R_PRODUCT_ID)
             );
+
+            // デバイスが見つからない場合は静かにリターン（ログ抑制）
+            if (joycons.length === 0) {
+                return;
+            }
 
             for (const jc of joycons) {
                 if (jc.path && !this.devices.has(jc.path)) {
@@ -82,7 +95,8 @@ export class JoyConService extends EventEmitter {
                         });
 
                         device.on('error', (err) => {
-                            console.error(`🔴 Joy-Con通信エラー (切断検知 path: ${jc.path}):`, err);
+                            // エラーログを詳細化
+                            // console.error(`🔴 Joy-Con通信エラー (切断検知 path: ${jc.path}):`, err);
                             this.handleDisconnect(jc.path);
                         });
 
@@ -90,13 +104,15 @@ export class JoyConService extends EventEmitter {
                         this.emit('connected', { product: jc.product, index });
                         console.log(`⏳ キャリブレーションを開始します(${index}) 数秒間静置してください...`);
                     } catch (connErr) {
-                        console.error('Joy-Con接続エラー:', connErr);
+                        // 接続失敗はよくあることなのでエラーレベルを下げる、または無視する
+                        // console.error('Joy-Con接続エラー:', connErr);
                         this.handleDisconnect(jc.path);
                     }
                 }
             }
         } catch (e) {
-            console.error('デバイススキャンエラー:', e);
+            // スキャン全体のエラー
+            console.error('Joy-Conデバイススキャンエラー:', e);
         }
     }
 

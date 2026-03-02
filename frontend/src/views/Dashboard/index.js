@@ -21,7 +21,8 @@ export function DashboardView(navigateTo) {
     // navigate('lab', { id: 'tutorial', title: 'チュートリアル' })
     if (cardTutorial) {
         cardTutorial.addEventListener('click', () => {
-            navigateTo('lab', { id: 'tutorial', title: 'チュートリアル' });
+            // まずJoy-Con接続ガイドへ遷移する
+            navigateTo('/connection-guide');
         });
     }
 

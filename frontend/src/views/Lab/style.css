@@ -100,8 +100,10 @@
 }
 
 /* 解説ダイアログ */
+/*.explanation-dialog {
     color: #00e676;
-}
+}*/
+
 
 .lab-controls-overlay {
     position: absolute;

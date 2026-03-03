@@ -534,6 +534,61 @@ export class LabScene {
 
             group.add(this.flaskLiquidMesh);
 
+        } else if (this.experimentId === 'exp_03_al') {
+            // アルミニウム（薄い銀色の板や破片）
+            this.aluminumGroup = new THREE.Group();
+
+            const mat = new THREE.MeshStandardMaterial({
+                color: 0xcccccc, // 銀色
+                roughness: 0.3,
+                metalness: 0.8,
+                side: THREE.DoubleSide
+            });
+
+            // アルミ片を配置
+            for(let i=0; i<20; i++) {
+                // 薄い板状
+                const geo = new THREE.BoxGeometry(0.2, 0.01, 0.2);
+                const mesh = new THREE.Mesh(geo, mat);
+
+                // フラスコの底に配置
+                const r = Math.random() * 1.0;
+                const theta = Math.random() * Math.PI * 2;
+
+                mesh.position.set(
+                    r * Math.cos(theta),
+                    0.05 + Math.random()*0.1,
+                    r * Math.sin(theta)
+                );
+                // ランダムに回転させて散らばっている感を出す
+                mesh.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
+                this.aluminumGroup.add(mesh);
+            }
+            this.aluminumGroup.renderOrder = 1;
+            group.add(this.aluminumGroup);
+
+            // 注がれる液体 (塩酸)
+            const liquidHeight = 2.5;
+            const addedLiquidGeo = new THREE.CylinderGeometry(0.6, 1.4, liquidHeight, 32);
+            addedLiquidGeo.translate(0, liquidHeight/2, 0);
+
+            const addedLiquidMat = new THREE.MeshPhysicalMaterial({
+                color: 0xddeeff, // 無色透明
+                transparent: true,
+                opacity: 0.5,
+                transmission: 0.9,
+                roughness: 0.1,
+                depthWrite: false
+            });
+
+            this.flaskLiquidMesh = new THREE.Mesh(addedLiquidGeo, addedLiquidMat);
+            this.flaskLiquidMesh.visible = false;
+            this.flaskLiquidMesh.scale.y = 0.01;
+            this.flaskLiquidMesh.position.y = 0.1;
+            this.flaskLiquidMesh.renderOrder = 2;
+
+            group.add(this.flaskLiquidMesh);
+
         } else {
             // デフォルト: フラスコの中身（液体：赤色）
             const liquidColor = 0xff0000;
@@ -699,8 +754,9 @@ export class LabScene {
                 // フラスコ内の液面を上昇させる (許可された物質の場合のみ)
                 const isExp01 = (this.experimentId === 'exp_01_o2');
                 const isExp02 = (this.experimentId === 'exp_02_co2');
+                const isExp03 = (this.experimentId === 'exp_03_al');
 
-                if (this.currentChemicalName && (isExp01 || isExp02) && this.flaskLiquidMesh) {
+                if (this.currentChemicalName && (isExp01 || isExp02 || isExp03) && this.flaskLiquidMesh) {
                      // 簡易名称チェック
                     let isTargetChemical = false;
 
@@ -712,9 +768,10 @@ export class LabScene {
                         isTargetChemical = true;
                     }
 
-                    if (isExp02 && (
+                    if ((isExp02 || isExp03) && (
                         this.currentChemicalName.includes('塩酸') ||
                         this.currentChemicalName === '塩化水素' ||
+                        this.currentChemicalName === 'HCl' ||
                         this.currentChemicalName === 'HCL'
                     )) {
                         isTargetChemical = true;
@@ -734,8 +791,8 @@ export class LabScene {
             }
 
         // --- 混合・反応ロジック (常時実行: 注いでいない時でも振れば混ざる) ---
-        // exp_01_o2 または exp_02_co2 で有効
-        const activeExpId = this.experimentId === 'exp_01_o2' ? 'exp_01_o2' : (this.experimentId === 'exp_02_co2' ? 'exp_02_co2' : null);
+        // exp_01_o2, exp_02_co2, exp_03_al で有効
+        const activeExpId = ['exp_01_o2', 'exp_02_co2', 'exp_03_al'].includes(this.experimentId) ? this.experimentId : null;
 
         if (activeExpId && this.flaskLiquidMesh && this.flaskLiquidMesh.visible) {
 
@@ -768,6 +825,8 @@ export class LabScene {
                          targetColorHex = 0xffffff; // 石灰水が白濁するなら白だが、発生実験なら透明のまま？
                          // 「石灰石に塩酸を注ぎ、白く濁る様子や温度変化を観察する。」とある (experiments.js)
                          // なので白濁させる
+                    } else if (activeExpId === 'exp_03_al') {
+                         targetColorHex = 0xaaaaaa; // アルミが溶けると少し灰色っぽくなったり泡立ったりする
                     }
 
                     // Lerpで徐々に目標色へ (混ぜれば混ぜるほど変化)
@@ -830,6 +889,35 @@ export class LabScene {
                              mesh.scale.multiplyScalar(0.99); // 徐々に小さく
                          } else {
                              mesh.visible = false;
+                         }
+                     });
+                 }
+            }
+
+            // ★アルミニウム（Al実験）の消去演出
+            if (activeExpId === 'exp_03_al' && this.aluminumGroup) {
+                 if (this.flaskLiquidMesh.scale.y > 0.2 && this.mixingProgress > 30.0) {
+                     // 混ぜ進捗に合わせて徐々に溶かす (30～280の間で 1.0 -> 0.0)
+                     const duration = 250.0;
+                     const progress = Math.min(1.0, (this.mixingProgress - 30.0) / duration);
+                     const targetScale = 1.0 - progress;
+
+                     this.aluminumGroup.children.forEach(mesh => {
+                         if (mesh.visible) {
+                             // スケール更新（混ぜ具合と連動）
+                             mesh.scale.setScalar(Math.max(0.001, targetScale));
+
+                             // 振動・沸騰演出
+                             // ランダムウォークによるドリフトを防ぐため、元のY位置（の近似値）に戻りつつ振動させる等の工夫が良いが
+                             // 短時間の演出なので簡易的に
+                             mesh.position.y += (Math.random() - 0.5) * 0.01;
+                             mesh.rotation.x += 0.1;
+                             mesh.rotation.z += 0.1;
+
+                             // 完全に溶けたら消す
+                             if (targetScale <= 0.01) {
+                                 mesh.visible = false;
+                             }
                          }
                      });
                  }

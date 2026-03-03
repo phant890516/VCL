@@ -557,6 +557,9 @@ export function LabView(navigateTo, params = {}) {
                         case 'exp_02_co2':
                             mission = '下の「塩酸」ボタンを押して、フラスコ（石灰石）に注ぎ、よく振って反応させよう。';
                             break;
+                        case 'exp_03_al':
+                            mission = '下の「塩酸」ボタンを押して、フラスコ（アルミニウム）に注ぎ、反応を観察しよう。';
+                            break;
                         default:
                             mission = '自由に実験してみよう。';
                     }
@@ -573,7 +576,7 @@ export function LabView(navigateTo, params = {}) {
                      toolbar.innerHTML = '';
 
                      // 2. 実験IDに応じたボタンを追加
-                     if (params.id === 'exp_01_o2' || params.id === 'exp_02_co2') {
+                     if (['exp_01_o2', 'exp_02_co2', 'exp_03_al'].includes(params.id)) {
 
                          // ボタンがあるときは周期表ボタンを隠す
                          if (btnPeriodic) btnPeriodic.style.display = 'none';
@@ -597,7 +600,7 @@ export function LabView(navigateTo, params = {}) {
                                      if (titleEl) titleEl.textContent = '過酸化水素水';
                                  }
                              };
-                         } else if (params.id === 'exp_02_co2') {
+                         } else if (params.id === 'exp_02_co2' || params.id === 'exp_03_al') {
                              btn.textContent = '塩酸';
                              btn.onclick = () => {
                                  const hcl = {

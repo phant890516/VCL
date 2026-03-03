@@ -46,12 +46,12 @@ export const trophiesData = [
         description: '「金属の溶け方（アルミニウム）」を成功させ、水素の発生を確認した',
         category: 'experiment'
     },
-    {
-        id: 'trophy_exp_06_neutral',
-        title: '中和ハカセ',
-        description: '「酸とアルカリの性質調べ」を成功させ、中和反応を体験した',
-        category: 'experiment'
-    },
+    // {
+    //     id: 'trophy_exp_06_neutral',
+    //     title: '中和ハカセ',
+    //     description: '「酸とアルカリの性質調べ」を成功させ、中和反応を体験した',
+    //     category: 'experiment'
+    // },
     {
         id: 'trophy_exp_07_lime',
         title: '白濁の証',

@@ -54,8 +54,10 @@ export class LabScene {
         this.flaskTargetRotationZ = 0; // フラスコ用目標角度
 
         // キャリブレーション用
-        this.calibrationOffset = 0;
-        this.lastRawAngle = 0;
+        this.testTubeOffset = 0;
+        this.flaskOffset = 0;
+        this.lastTestTubeRaw = 0;
+        this.lastFlaskRaw = 0;
         this.angleHistory = []; // 平均化用バッファ
         this.flaskAngleHistory = []; // フラスコ用平均化用バッファ
         this.keyDownHandler = null;
@@ -132,6 +134,10 @@ export class LabScene {
         // ★位置調整: フラスコの位置を調整 (少し左に寄せて、試験管の真下近くにするなど)
         this.flaskGroup.position.set(0, 0, 0); // 中央よりに配置
         this.scene.add(this.flaskGroup);
+
+        // ★フラスコの初期キャリブレーションフラグ
+        // 初回受信時に現在の角度を0度として補正する
+        this.isFlaskCalibrated = false;
 
         // 9. デバッグUIセットアップ（削除）
         // this.setupDebugUI();
@@ -599,8 +605,9 @@ export class LabScene {
     onKeyDown(event) {
         // 'C'キーで現在の角度を0度として補正（キャリブレーション）
         if (event.key.toLowerCase() === 'c') {
-            this.calibrationOffset = this.lastRawAngle;
-            console.log(`[LabScene] Calibrated! New Offset: ${this.calibrationOffset}`);
+            this.testTubeOffset = this.lastTestTubeRaw;
+            this.flaskOffset = this.lastFlaskRaw;
+            console.log(`[LabScene] Calibrated! TestTube: ${this.testTubeOffset}, Flask: ${this.flaskOffset}`);
         }
     }
 
@@ -1029,19 +1036,15 @@ export class LabScene {
                 while (angleVal > 180) angleVal -= 360;
                 while (angleVal <= -180) angleVal += 360;
 
-                // キャリブレーション補正 (共通オフセットを使用する簡易実装)
-                // 個別のオフセットが必要なら別途変数を設けるべきだが、一旦共有
-                let adjustedAngle = angleVal - this.calibrationOffset;
-
-                // 補正後も再度正規化（オフセットで範囲外に出る可能性があるため）
-                while (adjustedAngle > 180) adjustedAngle -= 360;
-                while (adjustedAngle <= -180) adjustedAngle += 360;
-
-                // ターゲット別の処理
+                let adjustedAngle = 0;
                 let finalAngle = 0;
 
                 if (targetDevice === 'test_tube' && this.testTubeGroup) {
-                    this.lastRawAngle = angleVal; // 正規化後の値を保存
+                    this.lastTestTubeRaw = angleVal;
+                    adjustedAngle = angleVal - this.testTubeOffset;
+                    // Normalize
+                    while (adjustedAngle > 180) adjustedAngle -= 360;
+                    while (adjustedAngle <= -180) adjustedAngle += 360;
 
                     // --- 試験管用移動平均フィルタ ---
                     this.angleHistory.push(adjustedAngle);
@@ -1060,7 +1063,6 @@ export class LabScene {
                     finalAngle = THREE.MathUtils.clamp(averageAngle, -120, 120);
 
                     // 目標角度を更新 (Degree -> Radian)
-                    // 試験管はZ軸回転で傾ける
                     this.targetRotationZ = THREE.MathUtils.degToRad(finalAngle);
 
                     // デバッグ情報更新
@@ -1073,6 +1075,20 @@ export class LabScene {
                     }
 
                 } else if (targetDevice === 'flask' && this.flaskGroup) {
+                    this.lastFlaskRaw = angleVal;
+
+                    // 自動キャリブレーション（初回のみ）
+                    if (!this.isFlaskCalibrated) {
+                        this.flaskOffset = angleVal;
+                        this.isFlaskCalibrated = true;
+                        console.log(`[LabScene] Auto-calibrated Flask! Offset: ${this.flaskOffset}`);
+                    }
+
+                    adjustedAngle = angleVal - this.flaskOffset;
+                    // Normalize
+                    while (adjustedAngle > 180) adjustedAngle -= 360;
+                    while (adjustedAngle <= -180) adjustedAngle += 360;
+
                      // --- フラスコ用移動平均フィルタ ---
                     if (!this.flaskAngleHistory) this.flaskAngleHistory = [];
                     this.flaskAngleHistory.push(adjustedAngle);
@@ -1082,15 +1098,15 @@ export class LabScene {
                     // 平均値を計算
                     let averageAngle = this.flaskAngleHistory.reduce((sum, val) => sum + val, 0) / this.flaskAngleHistory.length;
 
-                     // 強力なデッドバンド
+                     // 強力なデッドバンド: 直立付近(±5度)は完全に0にする
                     if (Math.abs(averageAngle) < 5.0) {
                         averageAngle = 0;
                     }
 
-                    // 角度制限: -120 ~ 120 (フラスコも同様に制限)
+                    // 角度制限: -120 ~ 120
                     finalAngle = THREE.MathUtils.clamp(averageAngle, -120, 120);
 
-                    // 目標角度を更新 (Degree -> Radian)
+                    // 目標角度を更新
                     this.flaskTargetRotationZ = THREE.MathUtils.degToRad(finalAngle);
 
                     // デバッグ情報更新

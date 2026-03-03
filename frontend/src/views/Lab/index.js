@@ -431,7 +431,13 @@ export function LabView(navigateTo, params = {}) {
             clearInterval(intervalId);
             // toastはcontext内なので自動削除される
             if (labScene) labScene.dispose();
-            navigateTo('result', { score: 'S' });
+
+            // params.id（クエストID）がある場合はクエスト一覧へ、なければダッシュボードへ
+            if (params.id) {
+                navigateTo('/select-mode');
+            } else {
+                navigateTo('/dashboard');
+            }
         });
     }
 
@@ -524,10 +530,12 @@ export function LabView(navigateTo, params = {}) {
                     if (btnClose) {
                         btnClose.onclick = () => {
                             dialog.style.display = 'none';
-                            // クエスト完了としてリザルト画面へ
+                            // クエスト完了としてクエスト一覧（セレクトモード）へ戻る
                             clearInterval(intervalId);
                             if (labScene) labScene.dispose();
-                            navigateTo('result', { score: 'S' });
+
+                            // Result画面をスキップ
+                            navigateTo('/select-mode');
                         };
                     }
                 }

@@ -524,7 +524,22 @@ export function LabView(navigateTo, params = {}) {
                             化学反応式：<br>
                             <span style="font-family: monospace; font-size: 1.3rem; color: #ffeb3b;">CaCO₃ + 2HCl → CaCl₂ + H₂O + CO₂</span>
                         `;
+                    } else if (expId === 'exp_03_al') {
+                         textEl.innerHTML = `
+                            <strong>アルミニウム</strong>に<strong>塩酸</strong>を加えると、激しく反応して水素が発生し、<strong>塩化アルミニウム</strong>が生成されます。<br><br>
+                            実験操作では、混ぜることで反応が進行し、アルミニウム片が溶けていく様子が観察できました。<br><br>
+                            化学反応式：<br>
+                            <span style="font-family: monospace; font-size: 1.3rem; color: #ffeb3b;">2Al + 6HCl → 2AlCl₃ + 3H₂</span>
+                        `;
+                    } else if (expId === 'exp_09_ag') {
+                         textEl.innerHTML = `
+                            <strong>硝酸銀水溶液</strong>に<strong>食塩水（塩化ナトリウム）</strong>を加えると、水に溶けにくい<strong>塩化銀</strong>が生成され、白く沈殿します。<br><br>
+                            このように、2種類の水溶液を混ぜて沈殿ができる反応を<strong>沈殿生成反応</strong>といいます。<br><br>
+                            化学反応式：<br>
+                            <span style="font-family: monospace; font-size: 1.3rem; color: #ffeb3b;">AgNO₃ + NaCl → AgCl↓ + NaNO₃</span>
+                        `;
                     }
+
                     dialog.style.display = 'block';
 
                     if (btnClose) {
@@ -560,6 +575,9 @@ export function LabView(navigateTo, params = {}) {
                         case 'exp_03_al':
                             mission = '下の「塩酸」ボタンを押して、フラスコ（アルミニウム）に注ぎ、反応を観察しよう。';
                             break;
+                        case 'exp_09_ag':
+                            mission = '下の「食塩水」ボタンを押して、フラスコ（硝酸銀水溶液）に注ぎ、変化を観察しよう。';
+                            break;
                         default:
                             mission = '自由に実験してみよう。';
                     }
@@ -576,7 +594,7 @@ export function LabView(navigateTo, params = {}) {
                      toolbar.innerHTML = '';
 
                      // 2. 実験IDに応じたボタンを追加
-                     if (['exp_01_o2', 'exp_02_co2', 'exp_03_al'].includes(params.id)) {
+                     if (['exp_01_o2', 'exp_02_co2', 'exp_03_al', 'exp_09_ag'].includes(params.id)) {
 
                          // ボタンがあるときは周期表ボタンを隠す
                          if (btnPeriodic) btnPeriodic.style.display = 'none';
@@ -614,6 +632,20 @@ export function LabView(navigateTo, params = {}) {
                                      if (titleEl) titleEl.textContent = '塩酸';
                                  }
                              };
+                         } else if (params.id === 'exp_09_ag') {
+                             btn.textContent = '食塩水';
+                             btn.onclick = () => {
+                                 const nacl = {
+                                    Name: '食塩水', // 化学名としては塩化ナトリウム水溶液だが、子供向けに食塩水
+                                    EnglishName: 'Sodium Chloride Solution',
+                                    Symbol: 'NaCl',
+                                    Appearance: '無色透明液体'
+                                 };
+                                 if (labScene && labScene.setChemical) {
+                                    labScene.setChemical(nacl);
+                                    if (titleEl) titleEl.textContent = '食塩水';
+                                }
+                             };
                          }
                          toolbar.appendChild(btn);
                      } else {
@@ -621,6 +653,7 @@ export function LabView(navigateTo, params = {}) {
                         if (btnPeriodic) btnPeriodic.style.display = 'flex';
                      }
                 }
+
 
 
                 // TODO: 実験ごとのセットアップロジックをここに書く

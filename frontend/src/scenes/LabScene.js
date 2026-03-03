@@ -53,6 +53,9 @@ export class LabScene {
         this.targetRotationZ = 0; // ラグ軽減のための目標角度
         this.flaskTargetRotationZ = 0; // フラスコ用目標角度
 
+        // 化学反応の状態管理
+        this.hasReactantAdded = false; // exp_09などのために追加: 反応試薬が投入されたか
+
         // キャリブレーション用
         this.testTubeOffset = 0;
         this.flaskOffset = 0;
@@ -589,6 +592,66 @@ export class LabScene {
 
             group.add(this.flaskLiquidMesh);
 
+        } else if (this.experimentId === 'exp_09_ag') {
+            // 硝酸銀水溶液の反応 (AgNO3 + NaCl -> AgCl↓ + NaNO3)
+            // フラスコには最初「硝酸銀水溶液」（無色透明）が入っている設定にするのが自然だが、
+            // 今までのロジック（注ぐのは液体）と合わせるなら、
+            // フラスコにあらかじめ「硝酸銀水溶液」が入っていて、そこに「食塩水」を注ぐ形にする。
+
+            // 液体（硝酸銀水溶液）初期状態
+            const liquidHeight = 1.0; // 最初からある程度入っている
+            const liquidGeo = new THREE.CylinderGeometry(1.2, 1.4, liquidHeight, 32);
+            liquidGeo.translate(0, liquidHeight/2, 0);
+
+            const liquidMat = new THREE.MeshPhysicalMaterial({
+                color: 0xddeeff, // 無色透明
+                transparent: true,
+                opacity: 0.3,
+                transmission: 0.95,
+                roughness: 0.05,
+                depthWrite: false
+            });
+
+            this.flaskLiquidMesh = new THREE.Mesh(liquidGeo, liquidMat);
+            this.flaskLiquidMesh.visible = true; // 最初から見える
+            this.flaskLiquidMesh.scale.y = 0.5;  // 最初は硝酸銀のみで半分の量
+            this.flaskLiquidMesh.position.y = 0.1;
+            this.flaskLiquidMesh.renderOrder = 2;
+            group.add(this.flaskLiquidMesh);
+
+            // 沈殿物（塩化銀）用のパーティクルグループ
+            this.precipitateGroup = new THREE.Group();
+            this.precipitateGroup.visible = false; // 最初は見えない
+
+            // 白い粉っぽいパーティクルを大量に用意
+            const pGeo = new THREE.BufferGeometry();
+            const pCount = 500;
+            const positions = new Float32Array(pCount * 3);
+
+            for(let i=0; i<pCount; i++) {
+                // フラスコ内部にランダム配置
+                const r = Math.random() * 1.0;
+                const theta = Math.random() * Math.PI * 2;
+                const y = Math.random() * 2.5; // 液中全体に広がる
+
+                positions[i*3] = r * Math.cos(theta);
+                positions[i*3+1] = y;
+                positions[i*3+2] = r * Math.sin(theta);
+            }
+            pGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+            const pMat = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 0.05,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            this.precipitateParticles = new THREE.Points(pGeo, pMat);
+            this.precipitateGroup.add(this.precipitateParticles);
+            group.add(this.precipitateGroup);
+
+
         } else {
             // デフォルト: フラスコの中身（液体：赤色）
             const liquidColor = 0xff0000;
@@ -755,8 +818,9 @@ export class LabScene {
                 const isExp01 = (this.experimentId === 'exp_01_o2');
                 const isExp02 = (this.experimentId === 'exp_02_co2');
                 const isExp03 = (this.experimentId === 'exp_03_al');
+                const isExp09 = (this.experimentId === 'exp_09_ag');
 
-                if (this.currentChemicalName && (isExp01 || isExp02 || isExp03) && this.flaskLiquidMesh) {
+                if (this.currentChemicalName && (isExp01 || isExp02 || isExp03 || isExp09) && this.flaskLiquidMesh) {
                      // 簡易名称チェック
                     let isTargetChemical = false;
 
@@ -777,12 +841,22 @@ export class LabScene {
                         isTargetChemical = true;
                     }
 
+                    if (isExp09 && (
+                        this.currentChemicalName.includes('食塩') ||
+                        this.currentChemicalName.includes('NaCl') ||
+                        this.currentChemicalName === '塩化ナトリウム'
+                    )) {
+                        isTargetChemical = true;
+                    }
+
                     if (isTargetChemical) {
                         this.flaskLiquidMesh.visible = true;
                         // 徐々にスケールアップ (初期高さ2.5 * scale.y)
                         // scale.y = 1.0 でフラスコの肩口あたり
                         if (this.flaskLiquidMesh.scale.y < 1.0) {
                             this.flaskLiquidMesh.scale.y += 0.005;
+                            // exp_09なら試薬投入フラグをON
+                            if (isExp09) this.hasReactantAdded = true;
                         }
                     }
                 }
@@ -791,14 +865,22 @@ export class LabScene {
             }
 
         // --- 混合・反応ロジック (常時実行: 注いでいない時でも振れば混ざる) ---
-        // exp_01_o2, exp_02_co2, exp_03_al で有効
-        const activeExpId = ['exp_01_o2', 'exp_02_co2', 'exp_03_al'].includes(this.experimentId) ? this.experimentId : null;
+        // exp_01_o2, exp_02_co2, exp_03_al, exp_09_ag で有効
+        const activeExpId = ['exp_01_o2', 'exp_02_co2', 'exp_03_al', 'exp_09_ag'].includes(this.experimentId) ? this.experimentId : null;
 
         if (activeExpId && this.flaskLiquidMesh && this.flaskLiquidMesh.visible) {
 
+
             // 1. 混ぜる動作の検知 (フラスコを振って混ぜる)
             // フラスコがある程度入っている状態で、フラスコが動かされたら累積角度を加算
-            if (this.flaskLiquidMesh.scale.y > 0.2) {
+
+            // ★追加: exp_09_ag の場合は「食塩水が注がれていない」と反応を進めないようにする
+            let canMix = true;
+            if (activeExpId === 'exp_09_ag' && !this.hasReactantAdded) {
+                canMix = false;
+            }
+
+            if (this.flaskLiquidMesh.scale.y > 0.2 && canMix) {
                 const currentFlaskZ = this.flaskGroup ? this.flaskGroup.rotation.z : 0;
                 // 前フレームとの差分（絶対値）ラジアン
                 const deltaRad = Math.abs(currentFlaskZ - (this.lastFlaskZ || 0));
@@ -822,24 +904,38 @@ export class LabScene {
                     // 実験によって色変化ターゲットを変える
                     let targetColorHex = 0x222222; // デフォルト黒
                     if (activeExpId === 'exp_02_co2') {
-                         targetColorHex = 0xffffff; // 石灰水が白濁するなら白だが、発生実験なら透明のまま？
-                         // 「石灰石に塩酸を注ぎ、白く濁る様子や温度変化を観察する。」とある (experiments.js)
-                         // なので白濁させる
+                         targetColorHex = 0xffffff; // 白濁
                     } else if (activeExpId === 'exp_03_al') {
-                         targetColorHex = 0xaaaaaa; // アルミが溶けると少し灰色っぽくなったり泡立ったりする
+                         targetColorHex = 0xaaaaaa; // アルミが溶けると灰色
+                    } else if (activeExpId === 'exp_09_ag') {
+                         // 硝酸銀(透明) + 食塩水(透明) -> 塩化銀(白濁)
+                         // 液体自体は白っぽくなり、沈殿物も出る
+                         targetColorHex = 0xeeeeee;
                     }
 
-                    // Lerpで徐々に目標色へ (混ぜれば混ぜるほど変化)
-                    currentColor.lerp(new THREE.Color(targetColorHex), 0.05);
+                    // Lerpで徐々に目標色へ
+                    // 沈殿実験の場合は、反応が進むと白濁するため不透明度も上げる
+                    if (activeExpId === 'exp_09_ag') {
+                        // 試薬が入っている場合のみ色変化
+                        if (this.hasReactantAdded) {
+                            currentColor.lerp(new THREE.Color(targetColorHex), 0.05);
+                            if (this.flaskLiquidMesh.material.opacity < 0.7) {
+                                this.flaskLiquidMesh.material.opacity += 0.01;
+                            }
+                        }
+                    } else {
+                         currentColor.lerp(new THREE.Color(targetColorHex), 0.05);
 
-                    // 不透明度も上げて「混ざってる感」を出す
-                    if (this.flaskLiquidMesh.material.opacity < 0.95) {
-                        this.flaskLiquidMesh.material.opacity += 0.005;
+                        // 不透明度も上げて「混ざってる感」を出す
+                        if (this.flaskLiquidMesh.material.opacity < 0.95) {
+                            this.flaskLiquidMesh.material.opacity += 0.005;
+                        }
                     }
                 }
             }
 
             // ★二酸化マンガン（粉末）の消去演出 (O2実験のみ)
+
             if (activeExpId === 'exp_01_o2' && this.manganeseOxideParticles && this.manganeseOxideParticles.material) {
                 // 液面がある程度上がったら
                 if (this.flaskLiquidMesh.scale.y > 0.1) {
@@ -923,17 +1019,53 @@ export class LabScene {
                  }
             }
 
-            // 3. 反応開始 (少し混ぜたら(30度分くらい)泡が出始める)
-            if (!this.isReacting && this.mixingProgress > 30.0) {
-                this.isReacting = true;
-            }
+            // ★塩化銀（AgCl）の沈殿演出
+            if (activeExpId === 'exp_09_ag' && this.precipitateParticles && this.flaskLiquidMesh.scale.y > 0.1) {
+                // 注いで混ぜると発生 (試薬投入済みが条件)
+                if (this.mixingProgress > 30 && this.hasReactantAdded) {
+                    this.precipitateGroup.visible = true;
+                    // 徐々に濃くなる
+                    if (this.precipitateParticles.material.opacity < 0.8) {
+                        this.precipitateParticles.material.opacity += 0.02;
+                    }
 
-            // 振っているときに泡を出す演出を追加
-            if (this.isReacting && this.flaskLiquidMesh.scale.y > 0.2) {
-                 if (Math.random() > 0.9) {
-                    const bubblePos = new THREE.Vector3(0, 0, 0);
-                    this.spawnReactionBubble(bubblePos);
-                 }
+                    // ゆっくり沈降させる
+                    const positions = this.precipitateParticles.geometry.attributes.position.array;
+                    let needUpdate = false;
+
+                    // 単純に下に動かすと床を突き抜けるので、ある程度下に溜まっていく演出
+                    for(let i=0; i < positions.length / 3; i++) {
+                        const idx = i * 3;
+                        let y = positions[idx+1];
+
+                        if (y > 0.1) {
+                             // まだ浮遊している場合、少しずつ沈む
+                             y -= 0.005 + Math.random() * 0.005;
+                             positions[idx+1] = y;
+                             needUpdate = true;
+                        } else {
+                             // 底に溜まったら少し広げる
+                             // positions[idx] += (Math.random()-0.5)*0.001;
+                        }
+                    }
+
+                    if (needUpdate) {
+                        this.precipitateParticles.geometry.attributes.position.needsUpdate = true;
+                    }
+                }
+            } else {
+                // 3. 反応開始 (少し混ぜたら(30度分くらい)泡が出始める)
+                if (!this.isReacting && this.mixingProgress > 30.0) {
+                    this.isReacting = true;
+                }
+
+                // 振っているときに泡を出す演出を追加 (O2, CO2, Alのみ)
+                if (this.isReacting && this.flaskLiquidMesh.scale.y > 0.2) {
+                     if (Math.random() > 0.9) {
+                        const bubblePos = new THREE.Vector3(0, 0, 0);
+                        this.spawnReactionBubble(bubblePos);
+                     }
+                }
             }
 
             // 4. 完了判定

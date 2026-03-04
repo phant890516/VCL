@@ -729,6 +729,11 @@ export class LabScene {
         }
     }
 
+    // Lerp関数（線形補間）
+    lerp(start, end, factor) {
+        return start + (end - start) * factor;
+    }
+
     animate() {
         this.animationId = requestAnimationFrame(this.animate.bind(this));
 
@@ -746,10 +751,19 @@ export class LabScene {
 
         // --- フラスコの角度を滑らかに更新 (Lerp) ---
         if (this.flaskGroup) {
-            // 現在の角度から目標角度へ少しずつ近づける (.rotation.z を使うと仮定)
+            // 現在の角度から目標角度へ少しずつ近づける (Lerp)
+            // 感度調整: 係数を0.05に下げてゆっくり追従させる
             const target = this.flaskTargetRotationZ || 0;
-            if (Math.abs(target - this.flaskGroup.rotation.z) > 0.001) {
-                this.flaskGroup.rotation.z += (target - this.flaskGroup.rotation.z) * 0.1;
+            const current = this.flaskGroup.rotation.z;
+
+            // Lerpを使用
+            const nextZ = this.lerp(current, target, 0.05);
+
+            // 差がごくわずかなら停止
+            if (Math.abs(target - current) > 0.001) {
+                this.flaskGroup.rotation.z = nextZ;
+            } else {
+                 this.flaskGroup.rotation.z = target;
             }
         }
 
@@ -886,8 +900,8 @@ export class LabScene {
                 const deltaRad = Math.abs(currentFlaskZ - (this.lastFlaskZ || 0));
                 this.lastFlaskZ = currentFlaskZ;
 
-                // 微小なブレ（ノイズ）は無視
-                if (deltaRad > 0.001) {
+                // 微小なブレ（ノイズ）は無視 (感度調整: 0.001 -> 0.02)
+                if (deltaRad > 0.02) {
                     // ラジアン -> 度数変換して加算
                     // 絶対値なのでマイナス関係なし。総移動量を積算。
                     const deltaDeg = THREE.MathUtils.radToDeg(deltaRad);

@@ -18,6 +18,7 @@ import { fileURLToPath } from 'url';
 import { initializeDatabase } from './db/database.js';
 import authRoutes from './routes/authRoutes.js';
 import gyroRoutes from './routes/gyroRoutes.js';
+import noteRoutes from './routes/noteRoutes.js';
 import trophyRoutes from './routes/trophyRoutes.js';
 import { JoyConService } from './services/joyconService.js';
 
@@ -72,6 +73,7 @@ app.use(express.json());
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/trophies', trophyRoutes);
+app.use('/api/notes', noteRoutes);
 app.use('/gyro', gyroRoutes);
 
 app.get('/api/chemicals', (req, res) => {

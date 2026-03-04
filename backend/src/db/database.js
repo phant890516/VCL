@@ -92,6 +92,13 @@ export async function initializeDatabase() {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (host_id) REFERENCES users(id)
         );
+
+        CREATE TABLE IF NOT EXISTS notes (
+            user_id INTEGER PRIMARY KEY,
+            content TEXT,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        );
     `);
 
     console.log('Database initialized at', dbPath);

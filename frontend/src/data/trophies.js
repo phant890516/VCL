@@ -198,6 +198,15 @@ export async function unlockTrophy(trophyId) {
 }
 
 /**
+ * ローカルに保存されたトロフィー情報を全削除する
+ * (管理者機能用)
+ */
+export function resetLocalTrophies() {
+    localStorage.removeItem(OFFLINE_STORAGE_KEY);
+    console.log('[Trophy] Local trophies cleared.');
+}
+
+/**
  * トロフィーデータをリセットする（デバッグ用）
  */
 export function resetTrophies() {

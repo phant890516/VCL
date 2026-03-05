@@ -7,6 +7,7 @@ import { initRouter, navigateTo, registerRoute } from './router.js';
 // Views
 import { initSidebar } from './components/Sidebar.js';
 import { ResultScene } from './scenes/ResultScene.js';
+import { AdminView } from './views/Admin/index.js'; // 追加
 import { ConnectionGuideView } from './views/ConnectionGuide/index.js';
 import { DashboardView } from './views/Dashboard/index.js';
 import { IdeaView } from './views/Idea/index.js';
@@ -60,6 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     registerRoute('/idea', wrapView(IdeaView));
     registerRoute('/live', wrapView(LiveView));
     registerRoute('/trophy', wrapView(TrophyView));
+    registerRoute('/admin', wrapView(AdminView));
     registerRoute('/setting', wrapView(SettingView));
 
     registerRoute('/lab', wrapView(LabView));       // navigateTo('lab', {id: '...'}) で呼ばれる

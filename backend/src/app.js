@@ -16,6 +16,7 @@ import path from 'path';
 import { Server } from 'socket.io';
 import { fileURLToPath } from 'url';
 import { initializeDatabase } from './db/database.js';
+import adminRoutes from './routes/adminRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import gyroRoutes from './routes/gyroRoutes.js';
 import noteRoutes from './routes/noteRoutes.js';
@@ -74,6 +75,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/trophies', trophyRoutes);
 app.use('/api/notes', noteRoutes);
+app.use('/api/admin', adminRoutes); // Admin routes added
 app.use('/gyro', gyroRoutes);
 
 app.get('/api/chemicals', (req, res) => {

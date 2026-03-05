@@ -749,21 +749,14 @@ export class LabScene {
             }
         }
 
+
         // --- フラスコの角度を滑らかに更新 (Lerp) ---
         if (this.flaskGroup) {
-            // 現在の角度から目標角度へ少しずつ近づける (Lerp)
-            // 感度調整: 係数を0.05に下げてゆっくり追従させる
             const target = this.flaskTargetRotationZ || 0;
-            const current = this.flaskGroup.rotation.z;
 
-            // Lerpを使用
-            const nextZ = this.lerp(current, target, 0.05);
-
-            // 差がごくわずかなら停止
-            if (Math.abs(target - current) > 0.001) {
-                this.flaskGroup.rotation.z = nextZ;
-            } else {
-                 this.flaskGroup.rotation.z = target;
+            // 試験管と全く同じロジックにする（elseブロック削除）
+            if (Math.abs(target - this.flaskGroup.rotation.z) > 0.001) {
+                this.flaskGroup.rotation.z += (target - this.flaskGroup.rotation.z) * 0.1;
             }
         }
 
@@ -900,8 +893,10 @@ export class LabScene {
                 const deltaRad = Math.abs(currentFlaskZ - (this.lastFlaskZ || 0));
                 this.lastFlaskZ = currentFlaskZ;
 
-                // 微小なブレ（ノイズ）は無視 (感度調整: 0.001 -> 0.02)
-                if (deltaRad > 0.02) {
+
+                // 微小なブレ（ノイズ）は無視 （フラスコ感度調整: 元の0.001に戻す)
+                // 試験管と同じく、ある程度敏感に反応させる
+                if (deltaRad > 0.001) {
                     // ラジアン -> 度数変換して加算
                     // 絶対値なのでマイナス関係なし。総移動量を積算。
                     const deltaDeg = THREE.MathUtils.radToDeg(deltaRad);
@@ -1311,12 +1306,12 @@ export class LabScene {
                 } else if (targetDevice === 'flask' && this.flaskGroup) {
                     this.lastFlaskRaw = angleVal;
 
-                    // 自動キャリブレーション（初回のみ）
-                    if (!this.isFlaskCalibrated) {
-                        this.flaskOffset = angleVal;
-                        this.isFlaskCalibrated = true;
-                        console.log(`[LabScene] Auto-calibrated Flask! Offset: ${this.flaskOffset}`);
-                    }
+                    // 自動キャリブレーション（試験管に合わせて無効化）
+                    // if (!this.isFlaskCalibrated) {
+                    //     this.flaskOffset = angleVal;
+                    //     this.isFlaskCalibrated = true;
+                    //     console.log(`[LabScene] Auto-calibrated Flask! Offset: ${this.flaskOffset}`);
+                    // }
 
                     adjustedAngle = angleVal - this.flaskOffset;
                     // Normalize

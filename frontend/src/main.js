@@ -14,6 +14,7 @@ import { IdeaView } from './views/Idea/index.js';
 import { LabView } from './views/Lab/index.js'; // Ensure this path is correct
 import { LiveView } from './views/Live/index.js';
 import { LoginView } from './views/Login/index.js';
+import { NotFoundView } from './views/NotFound/index.js'; // 追加
 import { RegisterView } from './views/Register/index.js';
 import { SelectModeView } from './views/SelectMode/index.js';
 import { SettingView } from './views/Setting/index.js';
@@ -70,6 +71,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     registerRoute('/result', renderResult);
+
+    registerRoute('/404', wrapView(NotFoundView));
 
     initSidebar((id) => {
         const pathMap = {

@@ -36,15 +36,27 @@ async function handleLocation() {
   // パラメータ取得 (History stateから)
   const params = window.history.state || {};
 
-  // 登録されていないパスならルート('/')扱いにするなどのフォールバック
-  const route = routes[path] || routes['/'];
+  // 1. 完全一致するパスがあるかをチェック
+  // 2. なければ404ページへリダイレクト
 
+  let route = routes[path];
+
+  if (!route) {
+    console.warn(`Route not found: ${path}. Redirecting to 404.`);
+
+    // 404ルートがあるならそちらへ、なければホームへ
+    if (routes['/404']) {
+        window.history.replaceState({}, '', '/404');
+        route = routes['/404'];
+    } else {
+        window.history.replaceState({}, '', '/');
+        route = routes['/'];
+    }
+  }
+
+  // 描画実行
   if (route) {
-    // 各画面の描画関数を実行
     await route(params);
-  } else {
-    console.warn(`Route not found for path: ${path}`);
-    if (routes['/']) routes['/']({});
   }
 }
 

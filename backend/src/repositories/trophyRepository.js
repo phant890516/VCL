@@ -48,4 +48,9 @@ export class TrophyRepository {
             throw error;
         }
     }
+
+    async deleteAll() {
+        const db = await getDb();
+        return db.run('DELETE FROM user_trophies');
+    }
 }

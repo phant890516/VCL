@@ -7,12 +7,14 @@ import { initRouter, navigateTo, registerRoute } from './router.js';
 // Views
 import { initSidebar } from './components/Sidebar.js';
 import { ResultScene } from './scenes/ResultScene.js';
+import { AdminView } from './views/Admin/index.js'; // 追加
 import { ConnectionGuideView } from './views/ConnectionGuide/index.js';
 import { DashboardView } from './views/Dashboard/index.js';
 import { IdeaView } from './views/Idea/index.js';
 import { LabView } from './views/Lab/index.js'; // Ensure this path is correct
 import { LiveView } from './views/Live/index.js';
 import { LoginView } from './views/Login/index.js';
+import { NotFoundView } from './views/NotFound/index.js'; // 追加
 import { RegisterView } from './views/Register/index.js';
 import { SelectModeView } from './views/SelectMode/index.js';
 import { SettingView } from './views/Setting/index.js';
@@ -60,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     registerRoute('/idea', wrapView(IdeaView));
     registerRoute('/live', wrapView(LiveView));
     registerRoute('/trophy', wrapView(TrophyView));
+    registerRoute('/admin', wrapView(AdminView));
     registerRoute('/setting', wrapView(SettingView));
 
     registerRoute('/lab', wrapView(LabView));       // navigateTo('lab', {id: '...'}) で呼ばれる
@@ -68,6 +71,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     registerRoute('/result', renderResult);
+
+    registerRoute('/404', wrapView(NotFoundView));
 
     initSidebar((id) => {
         const pathMap = {

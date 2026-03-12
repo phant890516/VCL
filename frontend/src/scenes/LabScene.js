@@ -73,6 +73,9 @@ export class LabScene {
             flask: { raw: 0, adj: 0, final: 0 }
         };
 
+        this.currentChemicalName = null; // 試験管の中身
+        this.flaskChemicalName = null;   // フラスコの中身
+
         // 初期化処理
         this.init();
     }
@@ -653,20 +656,27 @@ export class LabScene {
 
 
         } else {
-            // デフォルト: フラスコの中身（液体：赤色）
-            const liquidColor = 0xff0000;
-            const liquidMat = new THREE.MeshPhysicalMaterial({
-                color: liquidColor,
-                transmission: 0.6,
-                opacity: 0.8,
-                transparent: true
+            // ★フリーモード（デフォルト）
+            // 汎用的な液体メッシュを作成
+            const lHeight = 2.5;
+            const lGeo = new THREE.CylinderGeometry(0.6, 1.4, lHeight, 32);
+            lGeo.translate(0, lHeight/2, 0);
+
+            const lMat = new THREE.MeshPhysicalMaterial({
+                color: 0x88ccff, // デフォルト: 水色
+                transparent: true,
+                opacity: 0.3,
+                transmission: 0.9,
+                depthWrite: false
             });
 
-            // 底半径 ~1.4, 上面半径 ~1.0, 高さ 1.5 くらい
-            const liquidGeo = new THREE.CylinderGeometry(0.9, 1.4, 1.5, 32);
-            liquidGeo.translate(0, 0.75, 0); // 底を合わせる
-            const liquidMesh = new THREE.Mesh(liquidGeo, liquidMat);
-            group.add(liquidMesh);
+            this.flaskLiquidMesh = new THREE.Mesh(lGeo, lMat);
+            this.flaskLiquidMesh.visible = false; // 最初は空（または実験開始前）
+            this.flaskLiquidMesh.scale.y = 0.01;
+            this.flaskLiquidMesh.position.y = 0.1;
+            this.flaskLiquidMesh.renderOrder = 2;
+
+            group.add(this.flaskLiquidMesh);
         }
 
         return group;
@@ -702,6 +712,41 @@ export class LabScene {
 
         // コンテンツ更新
         this.updateTestTubeContent(this.testTubeContentGroup, type, colorHex, isTrans);
+    }
+
+    // フラスコの中身を設定するメソッド (JoyCon R側)
+    setFlaskChemical(chemicalData) {
+        if (!this.flaskLiquidMesh || !chemicalData) return;
+
+        const name = (getValue(chemicalData, KEYS.NAME) || "").trim();
+        const appText = getValue(chemicalData, KEYS.APP) || "";
+        console.log(`Setting flask chemical: ${name} (${appText})`);
+
+        this.flaskChemicalName = name;
+        this.mixingProgress = 0; // リセット
+
+        // 色決定
+        let colorHex = 0xffffff;
+        if (ELEMENT_SPECIFIC_DATA[name] && ELEMENT_SPECIFIC_DATA[name].color !== null) {
+            colorHex = ELEMENT_SPECIFIC_DATA[name].color;
+        } else {
+            const parsed = parseColor(appText);
+            if (parsed) colorHex = parsed;
+        }
+
+        // フラスコ内液体の更新
+        if (this.flaskLiquidMesh.material) {
+            this.flaskLiquidMesh.material.color.setHex(colorHex);
+            // 最初は少し入っている状態にする
+            this.flaskLiquidMesh.scale.y = 0.3;
+            this.flaskLiquidMesh.visible = true;
+            this.flaskLiquidMesh.material.opacity = 0.6; // 少し透明
+        }
+
+        // 以前の実験エフェクトをクリア
+        if (this.aluminumGroup) this.aluminumGroup.visible = false;
+        if (this.precipitateGroup) this.precipitateGroup.visible = false;
+        if (this.manganeseOxideParticles) this.manganeseOxideParticles.visible = false;
     }
 
     onResize() {
@@ -920,6 +965,14 @@ export class LabScene {
                          // 硝酸銀(透明) + 食塩水(透明) -> 塩化銀(白濁)
                          // 液体自体は白っぽくなり、沈殿物も出る
                          targetColorHex = 0xeeeeee;
+                    } else {
+                         // フリーモード: 試験管の色に変化させる
+                         if (this.testTubeContentGroup && this.testTubeContentGroup.children.length > 0) {
+                            const liquidMesh = this.testTubeContentGroup.children[0];
+                            if (liquidMesh && liquidMesh.material && liquidMesh.material.color) {
+                                targetColorHex = liquidMesh.material.color.getHex();
+                            }
+                        }
                     }
 
                     // Lerpで徐々に目標色へ
@@ -1136,9 +1189,18 @@ export class LabScene {
         tipLocal.applyMatrix4(this.testTubeGroup.matrixWorld);
 
         // パーティクル生成
-        // 色は試験管の中身に合わせたいが、一旦薄い水色で固定
+        // 色は試験管の中身に合わせる
+        let pColor = 0xaaccff;
+
+        if (this.testTubeContentGroup && this.testTubeContentGroup.children.length > 0) {
+            const liquidMesh = this.testTubeContentGroup.children[0];
+            if (liquidMesh && liquidMesh.material && liquidMesh.material.color) {
+               pColor = liquidMesh.material.color.getHex();
+            }
+        }
+
         const pGeo = new THREE.SphereGeometry(0.08, 4, 4);
-        const pMat = new THREE.MeshBasicMaterial({ color: 0xaaccff, transparent: true, opacity: 0.8 });
+        const pMat = new THREE.MeshBasicMaterial({ color: pColor, transparent: true, opacity: 0.8 });
         const pMesh = new THREE.Mesh(pGeo, pMat);
 
         pMesh.position.copy(tipLocal);

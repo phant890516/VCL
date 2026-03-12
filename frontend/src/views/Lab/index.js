@@ -196,23 +196,19 @@ export function LabView(navigateTo, params = {}) {
                     // クリックイベント
                     cell.onclick = () => {
                         currentFocusIndex = elData.originalIndex;
-                        // 選択して決定（周期表を閉じる & 実験に反映）
+                        // 選択処理開始（ダイアログ表示）
                         const selected = periodicTableLayout[currentFocusIndex];
-                        console.log('Clicked Chemical:', selected);
-                        if (titleEl) titleEl.textContent = selected.name;
+                        console.log('Selected Chemical:', selected);
 
-                        if (labScene && labScene.setChemical) {
-                            // detailedData から詳細情報を取得してマージ
-                            let detail = null;
-                            if (detailedData && Array.isArray(detailedData)) {
-                                detail = detailedData.find(d => d.AtomicNumber === selected.number) || detailedData.find(d => d.Name === selected.name);
-                            }
-                            const fullData = detail ? { ...selected, ...detail } : selected;
-
-                            labScene.setChemical(fullData);
+                        // 詳細情報を取得してマージ
+                        let detail = null;
+                        if (detailedData && Array.isArray(detailedData)) {
+                             detail = detailedData.find(d => d.AtomicNumber === selected.number) || detailedData.find(d => d.Name === selected.name);
                         }
+                        const fullData = detail ? { ...selected, ...detail } : selected;
 
-                        closePeriodicTable();
+                        // ダイアログを表示して試験管orフラスコを選択
+                        openSelectionDialog(fullData);
                     };
                 } else {
                     // 空白セル (不可視だがレイアウト維持のため配置)
@@ -254,6 +250,61 @@ export function LabView(navigateTo, params = {}) {
 
         document.removeEventListener('keydown', handleEscKey, true);
         console.log('Periodic table closed, Esc listener removed');
+    }
+
+    // ---------------------------------------------------------
+    // 薬品セット先選択ダイアログ制御
+    // ---------------------------------------------------------
+    let pendingChemicalData = null;
+    const dialogSelect = container.querySelector('#chemical-select-dialog');
+    const dialogNameEl = container.querySelector('#chemical-select-name');
+    const btnSetTube = container.querySelector('#btn-set-testtube');
+    const btnSetFlask = container.querySelector('#btn-set-flask');
+    const btnCancelSelect = container.querySelector('#btn-cancel-select');
+
+    function openSelectionDialog(data) {
+        pendingChemicalData = data;
+        if(dialogNameEl) dialogNameEl.textContent = data.name || data.Symbol;
+        if(dialogSelect) dialogSelect.style.display = 'flex';
+    }
+
+    function closeSelectionDialog() {
+        if(dialogSelect) dialogSelect.style.display = 'none';
+        pendingChemicalData = null;
+    }
+
+    // イベント設定
+    if(btnSetTube) {
+        btnSetTube.onclick = () => {
+            if(labScene && pendingChemicalData) {
+                labScene.setChemical(pendingChemicalData);
+                // タイトルに反映 (どちらに何を入れたか分かりやすくするため、実験中...の表記を変えてもいいが、とりあえず薬品名)
+                // if(titleEl) titleEl.textContent = pendingChemicalData.name;
+            }
+            closeSelectionDialog();
+            closePeriodicTable();
+        };
+    }
+
+    if(btnSetFlask) {
+        btnSetFlask.onclick = () => {
+            if(labScene && pendingChemicalData) {
+                if(labScene.setFlaskChemical) {
+                    labScene.setFlaskChemical(pendingChemicalData);
+                } else {
+                    console.warn('setFlaskChemical not implemented');
+                }
+            }
+            closeSelectionDialog();
+            closePeriodicTable();
+        };
+    }
+
+    if(btnCancelSelect) {
+        btnCancelSelect.onclick = () => {
+             closeSelectionDialog();
+             // 周期表は開いたままにする？ いや、キャンセルしたら戻る感じでOK
+        };
     }
 
     // 5. ナビゲーションロジック (上下左右移動)

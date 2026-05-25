@@ -17,37 +17,37 @@ export const trophiesData = [
 
     // 1. 実験完了トロフィー (exp_XX に対応)
     {
-        id: 'trophy_exp_01_o2',
+        id: 'trophy_exp_01',
         title: '酸素マスター',
         description: '「酸素の発生実験」を成功させ、酸素の性質を理解した',
         category: 'experiment'
     },
     {
-        id: 'trophy_exp_02_co2',
+        id: 'trophy_exp_02',
         title: '二酸化炭素マスター',
         description: '「二酸化炭素の発生実験」を成功させ、石灰水の変化を確認した',
         category: 'experiment'
     },
     {
-        id: 'trophy_exp_03_al',
+        id: 'trophy_exp_03',
         title: 'アルミニウム溶融',
         description: '「金属の溶け方（アルミニウム）」を成功させ、水素の発生を確認した',
         category: 'experiment'
     },
     // {
-    //     id: 'trophy_exp_06_neutral',
+    //     id: 'trophy_exp_06',
     //     title: '中和ハカセ',
     //     description: '「酸とアルカリの性質調べ」を成功させ、中和反応を体験した',
     //     category: 'experiment'
     // },
     {
-        id: 'trophy_exp_07_lime',
+        id: 'trophy_exp_04',
         title: '白濁の証',
         description: '「石灰水と二酸化炭素の反応」を成功させ、炭酸カルシウムの生成を確認した',
         category: 'experiment'
     },
     {
-        id: 'trophy_exp_09_ag',
+        id: 'trophy_exp_05',
         title: '沈殿マスター',
         description: '「硝酸銀水溶液の反応」を成功させ、塩化銀の沈殿を確認した',
         category: 'experiment'
@@ -58,12 +58,6 @@ export const trophiesData = [
         id: 'precise_mixing',
         title: '精密な調合',
         description: 'セレクトモードで、指示された手順を一度も間違えずに最後まで完了した',
-        category: 'skill'
-    },
-    {
-        id: 'temperature_magician',
-        title: '温度の魔術師',
-        description: '加熱が必要な実験（食塩水の蒸発や酸化銅の還元など）で、最適な温度管理を維持して成功させた',
         category: 'skill'
     },
     {
@@ -82,7 +76,8 @@ export const trophiesData = [
     }
 ];
 
-const API_BASE = 'http://localhost:3000/api/trophies';
+const API_BASE = '/api/trophies';
+const SCHOOL_API_BASE = '/api/school';
 const OFFLINE_STORAGE_KEY = 'vcl_user_trophies_offline';
 
 /**
@@ -110,11 +105,30 @@ function getCurrentUserId() {
  * @returns {Promise<string[]>} トロフィーIDの配列
  */
 export async function getAcquiredTrophies() {
+    const userId = getCurrentUserId();
+    if (userId) {
+        try {
+            const offlineTrophies = readOfflineTrophies();
+            for (const trophyId of offlineTrophies) {
+                await saveTrophyToDatabase(userId, trophyId);
+            }
+            if (offlineTrophies.length > 0) {
+                localStorage.removeItem(OFFLINE_STORAGE_KEY);
+            }
+
+            const response = await fetch(`${API_BASE}/history/${userId}`);
+            if (!response.ok) {
+                throw new Error('Failed to load trophies from database');
+            }
+            const history = await response.json();
+            return history.map(item => item.trophy_id);
+        } catch (e) {
+            console.warn('[Trophy] Falling back to local trophies:', e);
+        }
+    }
+
     try {
-        // ユーザーIDに関係なく、ブラウザ固有のストレージを使用する
-        // (以前のロジックだとユーザーごとのDB保存だったが、今回はブラウザ保存優先)
-        const stored = localStorage.getItem(OFFLINE_STORAGE_KEY);
-        const trophies = stored ? JSON.parse(stored) : [];
+        const trophies = readOfflineTrophies();
         console.log('[Trophy] Loaded local trophies:', trophies);
         return trophies;
     } catch (e) {
@@ -139,10 +153,28 @@ export async function unlockTrophy(trophyId) {
         return false;
     }
 
-    try {
-        // ローカルストレージから読み込み
-        const current = await getAcquiredTrophies();
+    const studentToken = localStorage.getItem('vcl_student_token');
+    if (studentToken) {
+        try {
+            // 生徒ログイン時は先生の進捗管理ボードへ反映できるようSupabaseにも同期する。
+            await saveStudentTrophyToSupabase(studentToken, trophyId);
+        } catch (e) {
+            console.warn('[Trophy] Failed to save student trophy to Supabase. Saving locally instead:', e);
+        }
+    }
 
+    const userId = getCurrentUserId();
+    if (userId && !studentToken) {
+        try {
+            const result = await saveTrophyToDatabase(userId, trophyId);
+            return Boolean(result?.success);
+        } catch (e) {
+            console.warn('[Trophy] Failed to save trophy to database. Saving locally instead:', e);
+        }
+    }
+
+    try {
+        const current = readOfflineTrophies();
         if (current.includes(trophyId)) {
             console.log('[Trophy] Already acquired (Local)');
             return false;
@@ -157,6 +189,44 @@ export async function unlockTrophy(trophyId) {
     } catch (e) {
         console.error('[Trophy] Error saving trophy locally:', e);
     }
+}
+
+function readOfflineTrophies() {
+    const stored = localStorage.getItem(OFFLINE_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+}
+
+async function saveTrophyToDatabase(userId, trophyId) {
+    const response = await fetch(`${API_BASE}/unlock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, trophyId })
+    });
+
+    if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to save trophy');
+    }
+
+    return response.json();
+}
+
+async function saveStudentTrophyToSupabase(studentToken, trophyId) {
+    const response = await fetch(`${SCHOOL_API_BASE}/students/trophies`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${studentToken}`
+        },
+        body: JSON.stringify({ trophyId })
+    });
+
+    if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to save student trophy');
+    }
+
+    return response.json();
 }
 
 /**

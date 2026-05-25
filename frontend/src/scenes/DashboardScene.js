@@ -32,10 +32,10 @@ export function DashboardScene(navigateTo) {
   const experiments = [
     {
       id: 'exp01',
-      title: '炎色反応の観察',
-      description: '金属イオンによる炎の色の変化を観察しよう。',
+      title: '酸素の発生',
+      description: '過酸化水素水と二酸化マンガンを混ぜ、泡として酸素が出る様子を観察しよう。',
       difficulty: '★☆☆',
-      image: 'flame-test' // クラス名用
+      image: 'gas-generation' // クラス名用
     },
     {
       id: 'exp02',

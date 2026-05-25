@@ -9,6 +9,8 @@
 import '../../assets/periodicTable.css';
 import { periodicData } from '../../data/periodicData.js';
 import { periodicTableLayout } from '../../data/periodicTable.js';
+import { recordExperimentProgress } from '../../data/progress.js';
+import { getQuestById } from '../../data/quests.js';
 import { trophiesData, unlockTrophy } from '../../data/trophies.js';
 import { LabScene } from '../../scenes/LabScene.js';
 import './style.css';
@@ -18,6 +20,7 @@ export function LabView(navigateTo, params = {}) {
     const container = document.createElement('div');
     container.classList.add('view-container');
     container.innerHTML = template;
+    const quest = getQuestById(params.id);
 
     const toast = document.createElement('div');
     toast.className = 'trophy-toast';
@@ -62,7 +65,7 @@ export function LabView(navigateTo, params = {}) {
     // タイトル設定
     const titleEl = container.querySelector('#lab-title-display');
     if (titleEl) {
-        titleEl.textContent = params.title || 'フリー実験';
+        titleEl.textContent = params.title || quest?.title || 'フリー実験';
     }
 
     // ---------------------------------------------------------
@@ -536,10 +539,15 @@ export function LabView(navigateTo, params = {}) {
                 const dialog = container.querySelector('#lab-explanation-dialog');
                 const textEl = container.querySelector('#lab-explanation-text');
                 const btnClose = container.querySelector('#btn-close-explanation');
+                const completedQuest = getQuestById(expId);
 
                 // ★トロフィー獲得ロジックの追加
                 if (expId) {
-                    const trophyId = `trophy_${expId}`;
+                    recordExperimentProgress(expId, 'completed').catch(error => {
+                        console.warn('[LabView] Failed to save experiment progress:', error);
+                    });
+
+                    const trophyId = completedQuest?.trophyId || `trophy_${expId}`;
                     console.log(`[LabView] Requesting trophy unlock: ${trophyId}`);
 
                     // unlockTrophyは非同期なのでawaitする
@@ -561,35 +569,7 @@ export function LabView(navigateTo, params = {}) {
                 }
 
                 if (dialog && textEl) {
-                    if (expId === 'exp_01_o2') {
-                        textEl.innerHTML = `
-                            <strong>二酸化マンガン</strong>に<strong>過酸化水素水</strong>を加えると、<strong>酸素</strong>が発生します。<br><br>
-                            この反応において、二酸化マンガン自身は変化せず、過酸化水素が分解するのを助ける<strong>「触媒（しょくばい）」</strong>として働いています。<br><br>
-                            化学反応式：<br>
-                            <span style="font-family: monospace; font-size: 1.3rem; color: #ffeb3b;">2H₂O₂ → 2H₂O + O₂</span>
-                        `;
-                    } else if (expId === 'exp_02_co2') {
-                        textEl.innerHTML = `
-                            <strong>石灰石</strong>（炭酸カルシウム）に<strong>塩酸</strong>（塩化水素）を加えると、<strong>二酸化炭素</strong>が発生します。<br><br>
-                            この反応では二酸化炭素が激しく泡となって出てきます。また、石灰石は徐々に溶けていきます。<br><br>
-                            化学反応式：<br>
-                            <span style="font-family: monospace; font-size: 1.3rem; color: #ffeb3b;">CaCO₃ + 2HCl → CaCl₂ + H₂O + CO₂</span>
-                        `;
-                    } else if (expId === 'exp_03_al') {
-                         textEl.innerHTML = `
-                            <strong>アルミニウム</strong>に<strong>塩酸</strong>を加えると、激しく反応して水素が発生し、<strong>塩化アルミニウム</strong>が生成されます。<br><br>
-                            実験操作では、混ぜることで反応が進行し、アルミニウム片が溶けていく様子が観察できました。<br><br>
-                            化学反応式：<br>
-                            <span style="font-family: monospace; font-size: 1.3rem; color: #ffeb3b;">2Al + 6HCl → 2AlCl₃ + 3H₂</span>
-                        `;
-                    } else if (expId === 'exp_09_ag') {
-                         textEl.innerHTML = `
-                            <strong>硝酸銀水溶液</strong>に<strong>食塩水（塩化ナトリウム）</strong>を加えると、水に溶けにくい<strong>塩化銀</strong>が生成され、白く沈殿します。<br><br>
-                            このように、2種類の水溶液を混ぜて沈殿ができる反応を<strong>沈殿生成反応</strong>といいます。<br><br>
-                            化学反応式：<br>
-                            <span style="font-family: monospace; font-size: 1.3rem; color: #ffeb3b;">AgNO₃ + NaCl → AgCl↓ + NaNO₃</span>
-                        `;
-                    }
+                    textEl.innerHTML = completedQuest?.explanationHtml || '実験が完了しました。';
 
                     dialog.style.display = 'block';
 
@@ -615,23 +595,7 @@ export function LabView(navigateTo, params = {}) {
                 const instructionBox = container.querySelector('#lab-instruction-box');
                 const instructionText = container.querySelector('#lab-instruction-text');
                 if (instructionBox && instructionText) {
-                    let mission = '';
-                    switch (params.id) {
-                        case 'exp_01_o2':
-                            mission = '下の「過酸化水素水」ボタンを押して、フラスコ（二酸化マンガン）に注ごう。';
-                            break;
-                        case 'exp_02_co2':
-                            mission = '下の「塩酸」ボタンを押して、フラスコ（石灰石）に注ぎ、よく振って反応させよう。';
-                            break;
-                        case 'exp_03_al':
-                            mission = '下の「塩酸」ボタンを押して、フラスコ（アルミニウム）に注ぎ、反応を観察しよう。';
-                            break;
-                        case 'exp_09_ag':
-                            mission = '下の「食塩水」ボタンを押して、フラスコ（硝酸銀水溶液）に注ぎ、変化を観察しよう。';
-                            break;
-                        default:
-                            mission = '自由に実験してみよう。';
-                    }
+                    const mission = quest?.mission || '自由に実験してみよう。';
                     if (mission) {
                         instructionText.textContent = mission;
                         instructionBox.style.display = 'block';
@@ -644,61 +608,28 @@ export function LabView(navigateTo, params = {}) {
                      // 1. まずツールバーをクリア
                      toolbar.innerHTML = '';
 
-                     // 2. 実験IDに応じたボタンを追加
-                     if (['exp_01_o2', 'exp_02_co2', 'exp_03_al', 'exp_09_ag'].includes(params.id)) {
+                     const actions = quest?.toolbarActions || [];
+
+                     // 2. クエスト定義に応じたボタンを追加
+                     if (actions.length > 0) {
 
                          // ボタンがあるときは周期表ボタンを隠す
                          if (btnPeriodic) btnPeriodic.style.display = 'none';
 
-                         const btn = document.createElement('button');
-                         btn.className = 'secondary-btn';
-                         btn.style.width = 'auto';
-                         btn.style.padding = '0.5rem 1rem';
-
-                         if (params.id === 'exp_01_o2') {
-                             btn.textContent = '過酸化水素水';
+                         actions.forEach(action => {
+                             const btn = document.createElement('button');
+                             btn.className = 'secondary-btn';
+                             btn.style.width = 'auto';
+                             btn.style.padding = '0.5rem 1rem';
+                             btn.textContent = action.label;
                              btn.onclick = () => {
-                                 const h2o2 = {
-                                     Name: '過酸化水素水',
-                                     EnglishName: 'Hydrogen Peroxide',
-                                     Symbol: 'H₂O₂',
-                                     Appearance: '無色透明液体',
-                                 };
                                  if (labScene && labScene.setChemical) {
-                                     labScene.setChemical(h2o2);
-                                     if (titleEl) titleEl.textContent = '過酸化水素水';
+                                     labScene.setChemical(action.chemical);
+                                     if (titleEl) titleEl.textContent = action.setTitle || action.label;
                                  }
                              };
-                         } else if (params.id === 'exp_02_co2' || params.id === 'exp_03_al') {
-                             btn.textContent = '塩酸';
-                             btn.onclick = () => {
-                                 const hcl = {
-                                     Name: '塩酸',
-                                     EnglishName: 'Hydrochloric Acid',
-                                     Symbol: 'HCl',
-                                     Appearance: '無色透明液体',
-                                 };
-                                 if (labScene && labScene.setChemical) {
-                                     labScene.setChemical(hcl);
-                                     if (titleEl) titleEl.textContent = '塩酸';
-                                 }
-                             };
-                         } else if (params.id === 'exp_09_ag') {
-                             btn.textContent = '食塩水';
-                             btn.onclick = () => {
-                                 const nacl = {
-                                    Name: '食塩水', // 化学名としては塩化ナトリウム水溶液だが、子供向けに食塩水
-                                    EnglishName: 'Sodium Chloride Solution',
-                                    Symbol: 'NaCl',
-                                    Appearance: '無色透明液体'
-                                 };
-                                 if (labScene && labScene.setChemical) {
-                                    labScene.setChemical(nacl);
-                                    if (titleEl) titleEl.textContent = '食塩水';
-                                }
-                             };
-                         }
-                         toolbar.appendChild(btn);
+                             toolbar.appendChild(btn);
+                         });
                      } else {
                         // それ以外は周期表ボタンを表示
                         if (btnPeriodic) btnPeriodic.style.display = 'flex';
@@ -707,16 +638,12 @@ export function LabView(navigateTo, params = {}) {
 
 
 
-                // TODO: 実験ごとのセットアップロジックをここに書く
-                // 例: 特定の薬品を初期状態でセットするなど
-
-                // 今回は炎色反応(exp_12_flame)の場合の処理を追加
-                if (params.id === 'exp_12_flame') {
-                    // 炎色反応用の初期設定（例えば、リチウムをセット）
-                    const initialChemical = detailedData.find(d => d.Name === 'リチウム' || d.Symbol === 'Li');
+                const initialChemicalName = quest?.initialChemical?.name;
+                if (initialChemicalName) {
+                    const initialChemical = detailedData.find(d => d.Name === initialChemicalName || d.Symbol === initialChemicalName);
                     if (initialChemical && labScene.setChemical) {
                         labScene.setChemical(initialChemical);
-                        if (titleEl) titleEl.textContent = `炎色反応: ${initialChemical.Name}`;
+                        if (titleEl) titleEl.textContent = `${quest.title}: ${initialChemical.Name}`;
                     }
                 }
             }

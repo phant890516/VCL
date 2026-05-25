@@ -8,6 +8,7 @@
  *   - Socket.IOサーバーの設定
  *   - Joy-Con連携サービスの初期化
  */
+import 'dotenv/config';
 import cors from 'cors';
 import express from 'express';
 import fs from 'fs';
@@ -20,6 +21,8 @@ import adminRoutes from './routes/adminRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import gyroRoutes from './routes/gyroRoutes.js';
 import noteRoutes from './routes/noteRoutes.js';
+import progressRoutes from './routes/progressRoutes.js';
+import schoolRoutes from './routes/schoolRoutes.js';
 import trophyRoutes from './routes/trophyRoutes.js';
 import { JoyConService } from './services/joyconService.js';
 
@@ -28,7 +31,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const httpServer = createServer(app);
-const PORT = 3000;
+const PORT = process.env.PORT || 3001;
 
 const io = new Server(httpServer, {
     cors: { origin: "*", methods: ["GET", "POST"] }
@@ -74,6 +77,8 @@ app.use(express.json());
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/trophies', trophyRoutes);
+app.use('/api/progress', progressRoutes);
+app.use('/api/school', schoolRoutes);
 app.use('/api/notes', noteRoutes);
 app.use('/api/admin', adminRoutes); // Admin routes added
 app.use('/gyro', gyroRoutes);

@@ -1,9 +1,6 @@
 /**
  * ファイル名: backend/src/db/database.js
- * 概要: SQLiteデータベース接続設定
- * 役割:
- *   - データベースのオープンとテーブルスキーマの初期化
- *   - ユーザー、トロフィー、ログイン履歴、ルームなどのテーブル定義
+ * 概要: SQLite データベース接続と初期スキーマ定義
  */
 import path from 'path';
 import { open } from 'sqlite';
@@ -15,8 +12,80 @@ const __dirname = path.dirname(__filename);
 
 let db;
 
+async function hasColumn(tableName, columnName) {
+    const columns = await db.all(`PRAGMA table_info(${tableName})`);
+    return columns.some((column) => column.name === columnName);
+}
+
+async function addColumnIfMissing(tableName, columnName, columnDefinition) {
+    if (!(await hasColumn(tableName, columnName))) {
+        await db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnDefinition}`);
+    }
+}
+
+async function seedExperiments() {
+    const experiments = [
+        {
+            experiment_code: 'exp_01',
+            title: '酸素の発生実験',
+            category: 'select_mode',
+            description: '二酸化マンガンに過酸化水素水を加え、酸素発生を観察する。',
+            is_available: 1
+        },
+        {
+            experiment_code: 'exp_02',
+            title: '二酸化炭素の発生実験',
+            category: 'select_mode',
+            description: '石灰石に塩酸を加え、二酸化炭素発生を観察する。',
+            is_available: 1
+        },
+        {
+            experiment_code: 'exp_03',
+            title: '金属の溶け方（アルミニウム）',
+            category: 'select_mode',
+            description: 'アルミニウムに塩酸を加え、水素発生や溶解を観察する。',
+            is_available: 1
+        },
+        {
+            experiment_code: 'exp_04',
+            title: '石灰水と二酸化炭素の反応',
+            category: 'select_mode',
+            description: '石灰水の白濁を観察する。',
+            is_available: 1
+        },
+        {
+            experiment_code: 'exp_05',
+            title: '硝酸銀水溶液の反応',
+            category: 'select_mode',
+            description: '硝酸銀と食塩水により塩化銀の沈殿を観察する。',
+            is_available: 1
+        }
+    ];
+
+    for (const experiment of experiments) {
+        await db.run(
+            `
+                INSERT INTO experiments (experiment_code, title, category, description, is_available)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(experiment_code) DO UPDATE SET
+                    title = excluded.title,
+                    category = excluded.category,
+                    description = excluded.description,
+                    is_available = excluded.is_available,
+                    updated_at = CURRENT_TIMESTAMP
+            `,
+            [
+                experiment.experiment_code,
+                experiment.title,
+                experiment.category,
+                experiment.description,
+                experiment.is_available
+            ]
+        );
+    }
+}
+
 export async function initializeDatabase() {
-    // データベースファイルは backend/database.sqlite に保存
     const dbPath = path.resolve(__dirname, '../../database.sqlite');
 
     db = await open({
@@ -24,13 +93,13 @@ export async function initializeDatabase() {
         driver: sqlite3.Database
     });
 
-    await db.exec(`
-        PRAGMA foreign_keys = ON;
+    await db.exec('PRAGMA foreign_keys = ON;');
 
+    await db.exec(`
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
-            email TEXT UNIQUE, -- 生徒はNULL可、教師は必須
+            email TEXT UNIQUE,
             password TEXT NOT NULL,
             role TEXT NOT NULL DEFAULT 'student',
             nickname TEXT,
@@ -41,9 +110,13 @@ export async function initializeDatabase() {
 
         CREATE TABLE IF NOT EXISTS experiments (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            experiment_code TEXT UNIQUE,
             title TEXT NOT NULL,
             category TEXT NOT NULL,
-            description TEXT
+            description TEXT,
+            is_available INTEGER NOT NULL DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
 
         CREATE TABLE IF NOT EXISTS user_progress (
@@ -56,17 +129,6 @@ export async function initializeDatabase() {
             FOREIGN KEY (experiment_id) REFERENCES experiments(id)
         );
 
-        CREATE TABLE IF NOT EXISTS user_trophies (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            trophy_id TEXT NOT NULL,
-            acquired_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id),
-            UNIQUE(user_id, trophy_id)
-        );
-
-        -- トロフィー定義はフロントエンドJSで管理するため、DBにはユーザー獲得履歴のみ保存 (シンプル化)
-        -- trophy_id は文字列 (例: 'initial_login') をそのまま保存する
         CREATE TABLE IF NOT EXISTS user_trophies (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
@@ -99,7 +161,24 @@ export async function initializeDatabase() {
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id)
         );
+
+        CREATE INDEX IF NOT EXISTS idx_user_progress_user_id ON user_progress(user_id);
+        CREATE INDEX IF NOT EXISTS idx_user_progress_experiment_id ON user_progress(experiment_id);
+        CREATE INDEX IF NOT EXISTS idx_user_trophies_user_id ON user_trophies(user_id);
+        CREATE INDEX IF NOT EXISTS idx_login_history_user_id ON login_history(user_id);
+        CREATE INDEX IF NOT EXISTS idx_rooms_host_id ON rooms(host_id);
     `);
+
+    await addColumnIfMissing('experiments', 'experiment_code', 'TEXT');
+    await addColumnIfMissing('experiments', 'is_available', 'INTEGER NOT NULL DEFAULT 1');
+    await addColumnIfMissing('experiments', 'created_at', 'DATETIME');
+    await addColumnIfMissing('experiments', 'updated_at', 'DATETIME');
+    await db.exec(`
+        UPDATE experiments SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL;
+        UPDATE experiments SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL;
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_experiments_experiment_code ON experiments(experiment_code);
+    `);
+    await seedExperiments();
 
     console.log('Database initialized at', dbPath);
     return db;

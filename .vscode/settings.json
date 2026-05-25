@@ -23,6 +23,9 @@
   "javascript.suggest.autoImports": true,
   "javascript.updateImportsOnFileMove.enabled": "always",
   // 4. 三層アーキテクチャの視認性向上
-  "explorer.compactFolders": false // フォルダを階層表示（三層が見やすくな
+  "explorer.compactFolders": false,
+  "python-envs.defaultEnvManager": "ms-python.python:conda",
+  "python-envs.defaultPackageManager": "ms-python.python:conda",
+  "python-envs.pythonProjects": [] // フォルダを階層表示（三層が見やすくな
 
 }

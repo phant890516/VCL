@@ -1,4 +1,4 @@
-﻿import { io } from 'socket.io-client';
+import { io } from 'socket.io-client';
 import { JoyConVisualizer } from './JoyCon3D.js';
 import './style.css';
 import template from './template.html?raw';
@@ -9,7 +9,6 @@ export function ConnectionGuideView(navigateTo) {
     container.innerHTML = template;
 
     const btnStart = container.querySelector('#btn-start-tutorial');
-    const btnSkip = container.querySelector('#btn-skip-connection');
 
     // Visualizer Elements
     const statusBadge = container.querySelector('#status-badge');
@@ -106,15 +105,9 @@ export function ConnectionGuideView(navigateTo) {
     // イベントリスナー
     btnStart.addEventListener('click', () => {
         socket.disconnect(); // Clean up socket connection
-        // チュートリアルIDを持って実験室へ遷移
-        navigateTo('/lab', { id: 'tutorial', title: 'チュートリアル' });
-    });
-
-    btnSkip.addEventListener('click', () => {
-        // if (confirm('Joy-Conなしで進みますか？（キーボード/マウス操作のみになります）')) {
-            socket.disconnect();
-            navigateTo('/lab', { id: 'tutorial', title: 'チュートリアル' });
-        // }
+        
+        // ★実験開始ではなく「セレクトモード」へ遷移に変更
+        navigateTo('/select-mode');
     });
 
     return container;

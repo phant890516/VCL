@@ -31,10 +31,11 @@ export function LoginView(navigateTo) {
         const email = container.querySelector('#email').value;
         const password = container.querySelector('#password').value;
         const button = container.querySelector('.login-btn');
+        const defaultButtonText = button.textContent;
 
         try {
             button.disabled = true;
-            button.textContent = '処理中...';
+            button.textContent = '認証中...';
 
             const response = await fetch('http://localhost:3000/api/auth/login', {
                 method: 'POST',
@@ -77,7 +78,7 @@ export function LoginView(navigateTo) {
             }
         } finally {
             button.disabled = false;
-            button.textContent = 'ログイン';
+            button.textContent = defaultButtonText;
         }
     });
 

@@ -114,13 +114,106 @@
     gap: 10px;
 }
 
-.lab-btn-abort {
-    background: rgba(0, 0, 0, 0.5);
+.lab-btn-finish {
     padding: 8px 15px;
 }
 
-.lab-btn-finish {
-    padding: 8px 15px;
+/* Modal Overlay */
+.lab-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000; /* 周期表より上 */
+}
+
+.lab-modal-content {
+    background: #1a1a1a;
+    width: 400px;
+    padding: 30px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.lab-modal-content h3 {
+    margin: 0;
+    color: #fff;
+    font-size: 1.5rem;
+}
+
+.lab-modal-content p {
+    color: #ccc;
+    font-size: 1.1rem;
+}
+
+#chemical-select-name {
+    color: #64b5f6;
+    font-weight: bold;
+}
+
+.lab-modal-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.modal-btn {
+    flex: 1;
+    padding: 15px 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s, filter 0.2s;
+}
+
+.modal-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+}
+
+.modal-btn:active {
+    transform: translateY(1px);
+}
+
+.tube-btn {
+    background: linear-gradient(135deg, #42a5f5, #1e88e5);
+    color: white;
+}
+
+.flask-btn {
+    background: linear-gradient(135deg, #66bb6a, #43a047);
+    color: white;
+}
+
+.modal-cancel {
+    background: #424242;
+    color: #aaa;
+    margin-top: 10px;
+    align-self: center;
+    font-size: 0.9rem;
+    padding: 8px 20px;
+}
+.modal-cancel:hover {
+    background: #616161;
+    color: #fff;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
 }
 
 .lab-toolbar {

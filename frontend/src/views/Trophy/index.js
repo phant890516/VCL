@@ -9,8 +9,12 @@ import { getAcquiredTrophies, trophiesData } from '../../data/trophies.js';
 import './style.css';
 import template from './template.html?raw';
 
-const UNLOCKED_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L4.4 2.8A2 2 0 0 1 6 2h12a2 2 0 0 1 1.6.8l1.6 2.14a2 2 0 0 1 .14 2.2L16.79 15"/><path d="M11 12 5.12 2.2"/><path d="m13 12 5.88-9.8"/><path d="M8 7h8"/><circle cx="12" cy="17" r="5"/><path d="M12 18v-2h-.5"/></svg>`;
-const LOCKED_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/></svg>`;
+function showListStatus(listContainer, message, isError = false) {
+    const status = document.createElement('div');
+    status.className = isError ? 'trophy-list-status error' : 'trophy-list-status';
+    status.textContent = message;
+    listContainer.replaceChildren(status);
+}
 
 export function TrophyView(navigateTo) {
     const container = document.createElement('div');
@@ -18,60 +22,43 @@ export function TrophyView(navigateTo) {
     container.innerHTML = template;
 
     const listContainer = container.querySelector('#trophy-list');
+    const itemTemplate = container.querySelector('#trophy-item-template');
 
     // リストが空なら作成
-    if (!listContainer) {
+    if (!listContainer || !itemTemplate) {
         console.error('Trophy list container not found');
         return container;
     }
 
     // ローディング表示
-    listContainer.innerHTML = '<div style="text-align:center; padding: 20px;">読み込み中...</div>';
+    showListStatus(listContainer, '読み込み中...');
 
     // 最新の獲得済みトロフィーリストを取得 (非同期)
     getAcquiredTrophies().then(acquiredIds => {
-        listContainer.innerHTML = ''; // ローディング消去
+        listContainer.replaceChildren(); // ローディング消去
 
         trophiesData.forEach(trophy => {
             const isAcquired = acquiredIds.includes(trophy.id);
-            const item = document.createElement('div');
+            const item = itemTemplate.content.firstElementChild.cloneNode(true);
+            const iconDiv = item.querySelector('.trophy-icon');
+            const title = item.querySelector('.trophy-title');
+            const desc = item.querySelector('.trophy-desc');
+            const badge = item.querySelector('.trophy-status-badge');
 
-            // クラス名を設定 (獲得済みかどうかでスタイル分岐)
-            item.className = `trophy-item ${isAcquired ? '' : 'trophy-item-locked'}`;
-
-            // 1. アイコン部分
-            const iconDiv = document.createElement('div');
-            iconDiv.className = `trophy-icon ${isAcquired ? 'trophy-icon-unlocked' : 'trophy-icon-locked'}`;
-            iconDiv.innerHTML = isAcquired ? UNLOCKED_ICON : LOCKED_ICON;
-
-            // テキスト部分
-            const contentDiv = document.createElement('div');
-            contentDiv.className = 'trophy-content';
-
-            const title = document.createElement('div');
-            title.className = isAcquired ? 'trophy-title-text' : 'trophy-title-text-locked';
+            item.classList.toggle('trophy-item-locked', !isAcquired);
+            iconDiv.classList.add(isAcquired ? 'trophy-icon-unlocked' : 'trophy-icon-locked');
+            item.querySelector('.trophy-icon-svg-unlocked').hidden = !isAcquired;
+            item.querySelector('.trophy-icon-svg-locked').hidden = isAcquired;
+            title.className = isAcquired ? 'trophy-title trophy-title-text' : 'trophy-title trophy-title-text-locked';
             title.textContent = trophy.title;
-
-            const desc = document.createElement('div');
-            desc.className = 'trophy-desc';
             desc.textContent = trophy.description;
-
-            // ステータスバッジ
-            const badge = document.createElement('span');
-            badge.className = `trophy-status-badge ${isAcquired ? 'acquired' : 'locked'}`;
+            badge.classList.add(isAcquired ? 'acquired' : 'locked');
             badge.textContent = isAcquired ? 'ACQUIRED' : 'LOCKED';
-
-            contentDiv.appendChild(title);
-            contentDiv.appendChild(desc);
-            contentDiv.appendChild(badge);
-
-            item.appendChild(iconDiv);
-            item.appendChild(contentDiv);
 
             listContainer.appendChild(item);
         });
     }).catch(err => {
-         listContainer.innerHTML = `<div style="color:red; text-align:center;">エラーが発生しました: ${err.message}</div>`;
+        showListStatus(listContainer, `エラーが発生しました: ${err.message}`, true);
     });
 
     return container;

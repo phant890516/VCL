@@ -1,32 +1,27 @@
 /**
- * ファイル名: backend/src/repositories/userRepository.js
- * 概要: ユーザーデータの永続化層
- * 役割:
- *   - users テーブルへのCRUD操作
- *   - メールアドレスやユーザー名による検索
- * アーキテクチャ: Repository層
+ * ユーザー保存処理の置き場。
+ *
+ * 旧ローカルDB実装は削除済み。
+ * 先生・生徒アカウントをどう保存するか決めたら、このRepositoryに実装を書く。
  */
-import { getDb } from '../db/database.js';
-
 export class UserRepository {
     async findByEmail(email) {
+        // TODO: ここにメールアドレスでユーザーを検索する処理を書く。
+        // 例: Supabase Auth / users テーブル / teacher_profiles などから取得する。
         if (!email) return null;
-        const db = getDb();
-        return await db.get('SELECT * FROM users WHERE email = ?', email);
+        return null;
     }
 
     async findByUsername(username) {
-        const db = getDb();
-        return await db.get('SELECT * FROM users WHERE username = ?', username);
+        // TODO: ここにユーザーIDでユーザーを検索する処理を書く。
+        // 生徒IDログインを使う場合は students.login_id と対応させる。
+        if (!username) return null;
+        return null;
     }
 
     async create(user) {
-        const db = getDb();
-        const { username, email, password, role, nickname, full_name } = user;
-        const result = await db.run(
-            'INSERT INTO users (username, email, password, role, nickname, full_name) VALUES (?, ?, ?, ?, ?, ?)',
-            [username, email || null, password, role || 'student', nickname || null, full_name || null]
-        );
-        return { id: result.lastID, ...user };
+        // TODO: ここにユーザー作成処理を書く。
+        // パスワードは必ずハッシュ化済みの値だけを保存する。
+        throw new Error('UserRepository.create is not implemented yet.');
     }
 }

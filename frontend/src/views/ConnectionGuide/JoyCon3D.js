@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import hintTemplate from './joycon_hint.html?raw';
 
 export class JoyConVisualizer {
     constructor(container) {
@@ -62,10 +63,7 @@ export class JoyConVisualizer {
         // Create a DOM element to point at the sync button
         this.hintLabel = document.createElement('div');
         this.hintLabel.className = 'joycon-3d-hint';
-        this.hintLabel.innerHTML = `
-            <div class="hint-arrow">←</div>
-            <div class="hint-text">シンクロボタン<br><small>長押し</small></div>
-        `;
+        this.hintLabel.innerHTML = hintTemplate;
         this.container.appendChild(this.hintLabel);
         this.updateHintVisibility(true);
     }

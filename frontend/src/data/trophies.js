@@ -9,18 +9,6 @@
 export const trophiesData = [
     // 既存のトロフィー
     {
-        id: 'initial_login',
-        title: 'はじめの一歩',
-        description: '初回ログインを完了した',
-        category: 'basics'
-    },
-    {
-        id: 'tutorial_complete',
-        title: '実験の基礎',
-        description: 'チュートリアルを最後まで完了した',
-        category: 'basics'
-    },
-    {
         id: 'experiment_master',
         title: '実験マスター',
         description: 'セレクトモード内の実験を全て成功させた',
@@ -29,37 +17,37 @@ export const trophiesData = [
 
     // 1. 実験完了トロフィー (exp_XX に対応)
     {
-        id: 'trophy_exp_01_o2',
+        id: 'trophy_exp_01',
         title: '酸素マスター',
         description: '「酸素の発生実験」を成功させ、酸素の性質を理解した',
         category: 'experiment'
     },
     {
-        id: 'trophy_exp_02_co2',
+        id: 'trophy_exp_02',
         title: '二酸化炭素マスター',
         description: '「二酸化炭素の発生実験」を成功させ、石灰水の変化を確認した',
         category: 'experiment'
     },
     {
-        id: 'trophy_exp_03_al',
+        id: 'trophy_exp_03',
         title: 'アルミニウム溶融',
         description: '「金属の溶け方（アルミニウム）」を成功させ、水素の発生を確認した',
         category: 'experiment'
     },
     // {
-    //     id: 'trophy_exp_06_neutral',
+    //     id: 'trophy_exp_06',
     //     title: '中和ハカセ',
     //     description: '「酸とアルカリの性質調べ」を成功させ、中和反応を体験した',
     //     category: 'experiment'
     // },
     {
-        id: 'trophy_exp_07_lime',
+        id: 'trophy_exp_04',
         title: '白濁の証',
         description: '「石灰水と二酸化炭素の反応」を成功させ、炭酸カルシウムの生成を確認した',
         category: 'experiment'
     },
     {
-        id: 'trophy_exp_09_ag',
+        id: 'trophy_exp_05',
         title: '沈殿マスター',
         description: '「硝酸銀水溶液の反応」を成功させ、塩化銀の沈殿を確認した',
         category: 'experiment'
@@ -70,12 +58,6 @@ export const trophiesData = [
         id: 'precise_mixing',
         title: '精密な調合',
         description: 'セレクトモードで、指示された手順を一度も間違えずに最後まで完了した',
-        category: 'skill'
-    },
-    {
-        id: 'temperature_magician',
-        title: '温度の魔術師',
-        description: '加熱が必要な実験（食塩水の蒸発や酸化銅の還元など）で、最適な温度管理を維持して成功させた',
         category: 'skill'
     },
     {
@@ -91,36 +73,10 @@ export const trophiesData = [
         title: '若き科学者',
         description: 'フリーモードで10種類以上の異なる物質の組み合わせを試した',
         category: 'exploration'
-    },
-    {
-        id: 'all_reactions_conquered',
-        title: '全反応制覇',
-        description: '要件定義書に記載されている11種類の実験（酸素発生から鉄と硫黄の反応まで）をすべて一度は実行した',
-        category: 'exploration'
-    },
-    {
-        id: 'light_in_darkness',
-        title: '暗闇の光',
-        description: 'マグネシウムの燃焼実験を行い、強い白色光を発生させた',
-        category: 'exploration'
-    },
-
-    // 4. ソーシャル・アクティビティ系
-    {
-        id: 'class_role_model',
-        title: 'クラスの模範',
-        description: 'アクティビティモードにおいて、教師（主催者）に送信される進捗情報が常に「成功」で完了した',
-        category: 'social'
-    },
-    {
-        id: 'experiment_buddy',
-        title: '実験仲間',
-        description: 'アクティビティモードのルームに合計5回以上参加した',
-        category: 'social'
     }
 ];
 
-const API_BASE = 'http://localhost:3000/api/trophies';
+const SCHOOL_API_BASE = '/api/school';
 const OFFLINE_STORAGE_KEY = 'vcl_user_trophies_offline';
 
 /**
@@ -144,15 +100,18 @@ function getCurrentUserId() {
 
 /**
  * 獲得済みトロフィーIDのリストを取得
- * 完全ローカルストレージ動作に変更
+ * ログイン時はDBを優先し、未ログイン時だけローカル保存を読む。
  * @returns {Promise<string[]>} トロフィーIDの配列
  */
 export async function getAcquiredTrophies() {
+    const userId = getCurrentUserId();
+    if (userId) {
+        // TODO: ここに通常ログインユーザーのトロフィー取得処理を書く。
+        // DB実装が決まるまではLocalStorageを表示元にする。
+    }
+
     try {
-        // ユーザーIDに関係なく、ブラウザ固有のストレージを使用する
-        // (以前のロジックだとユーザーごとのDB保存だったが、今回はブラウザ保存優先)
-        const stored = localStorage.getItem(OFFLINE_STORAGE_KEY);
-        const trophies = stored ? JSON.parse(stored) : [];
+        const trophies = readOfflineTrophies();
         console.log('[Trophy] Loaded local trophies:', trophies);
         return trophies;
     } catch (e) {
@@ -163,7 +122,7 @@ export async function getAcquiredTrophies() {
 
 /**
  * トロフィーを獲得して保存する
- * 完全ローカルストレージ動作に変更
+ * 生徒ログイン時はSupabaseへ同期し、それ以外はDB実装が決まるまでLocalStorageへ保存する。
  * @param {string} trophyId トロフィーID
  * @returns {Promise<boolean>} 新規獲得ならtrue、既に持っていたらfalse
  */
@@ -177,10 +136,24 @@ export async function unlockTrophy(trophyId) {
         return false;
     }
 
-    try {
-        // ローカルストレージから読み込み
-        const current = await getAcquiredTrophies();
+    const studentToken = localStorage.getItem('vcl_student_token');
+    if (studentToken) {
+        try {
+            // 生徒ログイン時は先生の進捗管理ボードへ反映できるようSupabaseにも同期する。
+            await saveStudentTrophyToSupabase(studentToken, trophyId);
+        } catch (e) {
+            console.warn('[Trophy] Failed to save student trophy to Supabase. Saving locally instead:', e);
+        }
+    }
 
+    const userId = getCurrentUserId();
+    if (userId && !studentToken) {
+        // TODO: ここに通常ログインユーザーのトロフィー保存処理を書く。
+        // DB実装が決まるまではLocalStorageへ保存する。
+    }
+
+    try {
+        const current = readOfflineTrophies();
         if (current.includes(trophyId)) {
             console.log('[Trophy] Already acquired (Local)');
             return false;
@@ -195,6 +168,40 @@ export async function unlockTrophy(trophyId) {
     } catch (e) {
         console.error('[Trophy] Error saving trophy locally:', e);
     }
+}
+
+function readOfflineTrophies() {
+    // 通信できない状況でも、獲得演出を失わないための補助保存。
+    const stored = localStorage.getItem(OFFLINE_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+}
+
+async function saveStudentTrophyToSupabase(studentToken, trophyId) {
+    // 学校運用では先生の進捗管理に反映できるようSupabase側へ保存する。
+    const response = await fetch(`${SCHOOL_API_BASE}/students/trophies`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${studentToken}`
+        },
+        body: JSON.stringify({ trophyId })
+    });
+
+    if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to save student trophy');
+    }
+
+    return response.json();
+}
+
+/**
+ * ローカルに保存されたトロフィー情報を全削除する
+ * (管理者機能用)
+ */
+export function resetLocalTrophies() {
+    localStorage.removeItem(OFFLINE_STORAGE_KEY);
+    console.log('[Trophy] Local trophies cleared.');
 }
 
 /**

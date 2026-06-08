@@ -21,8 +21,12 @@
 
 - SPA として動作し、History API により URL と表示画面を同期する。
 - サイドバーから主要画面へ遷移できる。
+- サイドバーには「ホーム」「クエスト」「ログイン」「ひらめき」「トロフィー」を表示する。
 - 画面本体は `#content-root` に描画する。
+- ログイン、登録、404 などの補助画面も共通サイドバー配下で表示し、画面全体を覆ってサイドバーを隠さない。
 - Joy-Con 入力はバックエンドの Socket.IO から `gyro-data` として受け取る。
+- 画面HTMLは `template.html` や `*.template.html` に分離し、JSに長いHTML文字列を直書きしない。
+- 動的なカードやセルはHTML側の `<template>` を複製し、JSではテキストや属性だけを差し込む。
 
 ### 2.2 保存先
 
@@ -32,7 +36,8 @@
 | 学校運用の先生トークン | LocalStorage の `vcl_teacher_access_token` |
 | 学校運用の生徒トークン | LocalStorage の `vcl_student_token` |
 | ゲストまたは通信失敗時のトロフィー | LocalStorage の `vcl_user_trophies_offline` |
-| ログインユーザーの進捗・トロフィー | SQLite または Supabase |
+| 生徒ログインユーザーの進捗・トロフィー | Supabase |
+| 通常ログインユーザーの進捗・トロフィー | 未実装。共同実装でDB方針を決める |
 
 ## 3. 画面一覧
 
@@ -83,6 +88,8 @@
 | API | `POST /api/auth/login` |
 | 保存 | 成功時に `vcl_token` と `vcl_user` を LocalStorage へ保存 |
 | 遷移 | ログイン成功後にダッシュボードへ遷移 |
+| 導線 | サイドバーの「ログイン」から `/login` へ遷移 |
+| 表示 | 左側にラボ端末風のステータス表示、右側にログインフォームを配置し、サイドバー配下の表示幅でも横長に崩れないようにする |
 
 ## 7. 接続ガイド
 
@@ -131,8 +138,9 @@
 
 | タイミング | 保存内容 | 保存先 |
 | --- | --- | --- |
-| 実験成功 | `completed` 進捗 | `/api/progress` または `/api/school/students/progress` |
-| 実験成功 | トロフィー ID | `/api/trophies/unlock` または `/api/school/students/trophies` |
+| 実験成功 | `completed` 進捗 | 生徒ログイン時は `/api/school/students/progress` |
+| 実験成功 | トロフィー ID | 生徒ログイン時は `/api/school/students/trophies` |
+| 通常ログイン時 | 進捗・トロフィー | 未実装。共同実装でDB方針を決める |
 | 通信失敗 | トロフィー ID | LocalStorage |
 
 ## 10. トロフィー画面
@@ -142,7 +150,7 @@
 | 目的 | 獲得済み・未獲得トロフィーを一覧表示する |
 | データ | `frontend/src/data/trophies.js` |
 | 主な表示 | トロフィー名、説明、獲得状態 |
-| 保存元 | ログイン時は DB、未ログイン時は LocalStorage |
+| 保存元 | 生徒ログイン時は Supabase、未ログイン・通常ログインの暫定表示は LocalStorage |
 
 ## 11. Idea 画面
 
@@ -150,7 +158,7 @@
 | --- | --- |
 | 目的 | 実験メモやアイデアを記録する |
 | API | `GET /api/notes/:userId`、`POST /api/notes` |
-| 保存 | ログイン時は SQLite の `notes`、未ログイン時は LocalStorage |
+| 保存 | 未実装。共同実装でDB方針を決めるまでは LocalStorage 案を検討 |
 
 ## 12. Live 画面
 

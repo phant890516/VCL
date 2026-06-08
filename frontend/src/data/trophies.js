@@ -76,7 +76,6 @@ export const trophiesData = [
     }
 ];
 
-const API_BASE = '/api/trophies';
 const SCHOOL_API_BASE = '/api/school';
 const OFFLINE_STORAGE_KEY = 'vcl_user_trophies_offline';
 
@@ -101,30 +100,14 @@ function getCurrentUserId() {
 
 /**
  * 獲得済みトロフィーIDのリストを取得
- * 完全ローカルストレージ動作に変更
+ * ログイン時はDBを優先し、未ログイン時だけローカル保存を読む。
  * @returns {Promise<string[]>} トロフィーIDの配列
  */
 export async function getAcquiredTrophies() {
     const userId = getCurrentUserId();
     if (userId) {
-        try {
-            const offlineTrophies = readOfflineTrophies();
-            for (const trophyId of offlineTrophies) {
-                await saveTrophyToDatabase(userId, trophyId);
-            }
-            if (offlineTrophies.length > 0) {
-                localStorage.removeItem(OFFLINE_STORAGE_KEY);
-            }
-
-            const response = await fetch(`${API_BASE}/history/${userId}`);
-            if (!response.ok) {
-                throw new Error('Failed to load trophies from database');
-            }
-            const history = await response.json();
-            return history.map(item => item.trophy_id);
-        } catch (e) {
-            console.warn('[Trophy] Falling back to local trophies:', e);
-        }
+        // TODO: ここに通常ログインユーザーのトロフィー取得処理を書く。
+        // DB実装が決まるまではLocalStorageを表示元にする。
     }
 
     try {
@@ -139,7 +122,7 @@ export async function getAcquiredTrophies() {
 
 /**
  * トロフィーを獲得して保存する
- * 完全ローカルストレージ動作に変更
+ * 生徒ログイン時はSupabaseへ同期し、それ以外はDB実装が決まるまでLocalStorageへ保存する。
  * @param {string} trophyId トロフィーID
  * @returns {Promise<boolean>} 新規獲得ならtrue、既に持っていたらfalse
  */
@@ -165,12 +148,8 @@ export async function unlockTrophy(trophyId) {
 
     const userId = getCurrentUserId();
     if (userId && !studentToken) {
-        try {
-            const result = await saveTrophyToDatabase(userId, trophyId);
-            return Boolean(result?.success);
-        } catch (e) {
-            console.warn('[Trophy] Failed to save trophy to database. Saving locally instead:', e);
-        }
+        // TODO: ここに通常ログインユーザーのトロフィー保存処理を書く。
+        // DB実装が決まるまではLocalStorageへ保存する。
     }
 
     try {
@@ -192,26 +171,13 @@ export async function unlockTrophy(trophyId) {
 }
 
 function readOfflineTrophies() {
+    // 通信できない状況でも、獲得演出を失わないための補助保存。
     const stored = localStorage.getItem(OFFLINE_STORAGE_KEY);
     return stored ? JSON.parse(stored) : [];
 }
 
-async function saveTrophyToDatabase(userId, trophyId) {
-    const response = await fetch(`${API_BASE}/unlock`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, trophyId })
-    });
-
-    if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to save trophy');
-    }
-
-    return response.json();
-}
-
 async function saveStudentTrophyToSupabase(studentToken, trophyId) {
+    // 学校運用では先生の進捗管理に反映できるようSupabase側へ保存する。
     const response = await fetch(`${SCHOOL_API_BASE}/students/trophies`, {
         method: 'POST',
         headers: {

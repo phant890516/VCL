@@ -1,4 +1,12 @@
 <div class="lab-scene">
+    <div class="trophy-toast" popover="manual">
+        <div class="trophy-toast-icon">🏆</div>
+        <div class="trophy-toast-content">
+            <span class="trophy-toast-title">トロフィー獲得！</span>
+            <span class="trophy-toast-body"></span>
+        </div>
+    </div>
+
     <!-- Three.js Canvas Container -->
     <div id="three-canvas-container" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 0;"></div>
 
@@ -50,6 +58,14 @@
             <div id="periodic-table-grid" class="periodic-table-container">
                 <!-- JSでセル生成 -->
             </div>
+
+            <template id="periodic-element-template">
+                <div class="element-cell">
+                    <div class="element-number"></div>
+                    <div class="element-symbol"></div>
+                    <div class="element-name"></div>
+                </div>
+            </template>
 
             <div class="element-info-panel">
                 <div id="pt-info-symbol" class="info-symbol-large">H</div>

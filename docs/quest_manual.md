@@ -8,6 +8,14 @@
 frontend/src/data/quests.js
 ```
 
+成功時の解説HTMLは、JSへ直接書かずに次のフォルダへ分けて置きます。
+
+```txt
+frontend/src/data/explanations/
+```
+
+`quests.js` では `import expXXExplanation from './explanations/exp_XX.html?raw';` のように読み込み、`explanationHtml` には読み込んだ変数を指定します。
+
 ## ID の付け方
 
 実験 ID は、内容名を付けずに番号だけで統一します。
@@ -328,12 +336,7 @@ toolbarActions: [
         }
     },
     trophyId: 'trophy_exp_XX',
-    explanationHtml: `
-        <strong>物質A</strong>に<strong>物質B</strong>を加えると、反応が起こります。<br><br>
-        学べることを書きます。<br><br>
-        化学反応式：<br>
-        <span style="font-family: monospace; font-size: 1.3rem; color: #ffeb3b;">反応式を書く</span>
-    `
+    explanationHtml: expXXExplanation
 }
 ```
 

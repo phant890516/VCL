@@ -29,6 +29,7 @@ function assertSupabaseResult(result) {
 }
 
 function clampPercent(value) {
+    // 画面から明示進捗が来た場合でも、DBには0〜100の整数だけ入れる。
     if (value === null || value === undefined || value === '') return null;
     const numeric = Number(value);
     if (!Number.isFinite(numeric)) return null;
@@ -36,6 +37,7 @@ function clampPercent(value) {
 }
 
 export function calculateProgressPercent(status, mixingProgress = 0, requiredMixing = 300, explicitPercent = null) {
+    // 先生画面で比較しやすいよう、実験状態を1つの進捗率へ変換する。
     const direct = clampPercent(explicitPercent);
     if (direct !== null) return direct;
 
@@ -54,10 +56,12 @@ export function calculateProgressPercent(status, mixingProgress = 0, requiredMix
 
 export class SchoolService {
     constructor() {
+        // 学校運用の書き込みはサーバー側の管理用Supabaseクライアントに集約する。
         this.supabase = getSupabaseAdmin();
     }
 
     async listClasses(teacherId) {
+        // teacher_idで絞り、別の先生のクラスが混ざらないようにする。
         return assertSupabaseResult(await this.supabase
             .from('classes')
             .select('id, name, class_code, created_at, updated_at')
@@ -71,6 +75,7 @@ export class SchoolService {
         }
 
         for (let attempt = 0; attempt < 5; attempt += 1) {
+            // class_codeが衝突した場合だけ再生成する。
             const classCode = randomCode(6);
             const result = await this.supabase
                 .from('classes')
@@ -90,6 +95,7 @@ export class SchoolService {
     }
 
     async getTeacherClass(teacherId, classId) {
+        // クラス操作の前に、必ず先生本人のクラスか確認する。
         const klass = assertSupabaseResult(await this.supabase
             .from('classes')
             .select('id, teacher_id, name, class_code, created_at, updated_at')
@@ -102,6 +108,7 @@ export class SchoolService {
     }
 
     async listStudents(teacherId, classId) {
+        // 権限確認を兼ねて、先にクラス所有者を検証する。
         await this.getTeacherClass(teacherId, classId);
 
         return assertSupabaseResult(await this.supabase
@@ -163,6 +170,7 @@ export class SchoolService {
             .update({ last_login_at: new Date().toISOString() })
             .eq('id', student.id);
 
+        // パスワードハッシュは返さず、以後の認証に使う短時間JWTだけ渡す。
         const token = signStudentToken(student);
         const { password_hash: _, ...safeStudent } = student;
 
@@ -186,6 +194,7 @@ export class SchoolService {
         const isValid = await bcrypt.compare(currentPassword || '', student.password_hash);
         if (!isValid) throw new Error('Current password is incorrect.');
 
+        // 初回変更が終わったらmust_change_passwordをfalseにする。
         const passwordHash = await bcrypt.hash(newPassword, 10);
         assertSupabaseResult(await this.supabase
             .from('students')
@@ -205,6 +214,7 @@ export class SchoolService {
             throw new Error('Invalid progress status.');
         }
 
+        // 表示名ではなく固定IDのexperiment_codeで実験を特定する。
         const experiment = assertSupabaseResult(await this.supabase
             .from('experiments')
             .select('id, experiment_code, title')
@@ -260,6 +270,7 @@ export class SchoolService {
     async unlockStudentTrophy(studentId, trophyId) {
         if (!trophyId) throw new Error('Trophy ID is required.');
 
+        // upsertで同じトロフィーの二重保存を避ける。
         return assertSupabaseResult(await this.supabase
             .from('student_trophies')
             .upsert(
@@ -271,6 +282,7 @@ export class SchoolService {
     }
 
     async getClassProgressBoard(teacherId, classId) {
+        // 先生が見る一覧なので、クラス・生徒・実験・進捗・トロフィー数をまとめて返す。
         const klass = await this.getTeacherClass(teacherId, classId);
         const students = await this.listStudents(teacherId, classId);
         const experiments = assertSupabaseResult(await this.supabase

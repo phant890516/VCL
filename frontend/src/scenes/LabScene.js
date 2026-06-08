@@ -113,7 +113,7 @@ export class LabScene {
         this.renderer.setPixelRatio(window.devicePixelRatio);
 
         // DOMに追加
-        this.container.innerHTML = '';
+        this.container.replaceChildren();
         this.container.appendChild(this.renderer.domElement);
 
         // 4. ライト設定
@@ -1092,18 +1092,19 @@ export class LabScene {
              const tData = this.debugInfo.testTube;
              const fData = this.debugInfo.flask;
              // 混ぜ進捗を表示: this.mixingProgress (0 ~ 300)
-             this.debugDisplay.innerHTML = `
-                 <div style="margin-bottom:5px; border-bottom:1px solid #555;"><strong>TestTube (JoyCon L)</strong><br>
-                 Raw: ${tData.raw.toFixed(1)}° / Adj: ${tData.adj.toFixed(1)}°<br>
-                 Final: <span style="color:cyan">${tData.final.toFixed(1)}°</span></div>
-
-                 <div style="margin-bottom:5px; border-bottom:1px solid #555;"><strong>Flask (JoyCon R)</strong><br>
-                 Raw: ${fData.raw.toFixed(1)}° / Adj: ${fData.adj.toFixed(1)}°<br>
-                 Final: <span style="color:cyan">${fData.final.toFixed(1)}°</span></div>
-
-                 <div style="color: yellow;"><strong>Quest Mixing</strong><br>
-                 Progress: ${this.mixingProgress.toFixed(1)} / ${this.getCompletionThreshold().toFixed(1)}</div>
-             `;
+             this.debugDisplay.style.whiteSpace = 'pre-line';
+             this.debugDisplay.textContent = [
+                 'TestTube (JoyCon L)',
+                 `Raw: ${tData.raw.toFixed(1)}° / Adj: ${tData.adj.toFixed(1)}°`,
+                 `Final: ${tData.final.toFixed(1)}°`,
+                 '',
+                 'Flask (JoyCon R)',
+                 `Raw: ${fData.raw.toFixed(1)}° / Adj: ${fData.adj.toFixed(1)}°`,
+                 `Final: ${fData.final.toFixed(1)}°`,
+                 '',
+                 'Quest Mixing',
+                 `Progress: ${this.mixingProgress.toFixed(1)} / ${this.getCompletionThreshold().toFixed(1)}`
+             ].join('\n');
         }
 
         if (this.renderer && this.scene && this.camera) {

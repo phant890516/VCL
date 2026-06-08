@@ -1,19 +1,18 @@
-import { getDb } from '../db/database.js';
-
+/**
+ * メモ保存処理の置き場。
+ *
+ * 旧ローカルDB実装は削除済み。
+ * Idea画面などでメモ保存を使う場合は、ここにDB保存処理を書く。
+ */
 export class NoteRepository {
     async findByUserId(userId) {
-        const db = getDb();
-        return await db.get('SELECT * FROM notes WHERE user_id = ?', userId);
+        // TODO: ここにユーザーごとのメモ取得処理を書く。
+        if (!userId) return null;
+        return null;
     }
 
     async save(userId, content) {
-        const db = getDb();
-        const existing = await this.findByUserId(userId);
-        if (existing) {
-            await db.run('UPDATE notes SET content = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?', [content, userId]);
-        } else {
-            await db.run('INSERT INTO notes (user_id, content) VALUES (?, ?)', [userId, content]);
-        }
-        return { user_id: userId, content };
+        // TODO: ここにメモ保存処理を書く。
+        throw new Error('NoteRepository.save is not implemented yet.');
     }
 }

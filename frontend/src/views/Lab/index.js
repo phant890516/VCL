@@ -22,19 +22,7 @@ export function LabView(navigateTo, params = {}) {
     container.innerHTML = template;
     const quest = getQuestById(params.id);
 
-    const toast = document.createElement('div');
-    toast.className = 'trophy-toast';
-    // popover属性を追加
-    try { toast.setAttribute('popover', 'manual'); } catch(e) {}
-    toast.innerHTML = `
-        <div class="trophy-toast-icon">🏆</div>
-        <div class="trophy-toast-content">
-            <span class="trophy-toast-title">トロフィー獲得！</span>
-            <span class="trophy-toast-body"></span>
-        </div>
-    `;
-    // 親要素(container)に追加 (Top Layer APIが効くならこれでOK)
-    container.appendChild(toast);
+    const toast = container.querySelector('.trophy-toast');
 
     // 通知を表示するヘルパー関数
     function showTrophyToast(title) {
@@ -60,6 +48,16 @@ export function LabView(navigateTo, params = {}) {
             if(toast.hidePopover) try { toast.hidePopover(); } catch(e) {}
             else toast.style.display = 'none';
         }, 5000);
+    }
+
+    function setExplanationContent(target, htmlText) {
+        target.replaceChildren();
+        if (!htmlText) {
+            target.textContent = '実験が完了しました。';
+            return;
+        }
+        const fragment = document.createRange().createContextualFragment(htmlText);
+        target.appendChild(fragment);
     }
 
     // タイトル設定
@@ -90,6 +88,7 @@ export function LabView(navigateTo, params = {}) {
     // ---------------------------------------------------------
     const overlay = container.querySelector('#periodic-table-overlay');
     const tableEl = container.querySelector('#periodic-table-grid');
+    const elementTemplate = container.querySelector('#periodic-element-template');
     const btnPeriodic = container.querySelector('#btn-lab-periodic-table');
     const btnClosePeriodic = container.querySelector('#btn-close-periodic');
     const btnFinish = container.querySelector('#btn-lab-finish');
@@ -162,8 +161,8 @@ export function LabView(navigateTo, params = {}) {
 
     // 3. 周期表レンダリング
     function renderTable() {
-        if (!tableEl) return;
-        tableEl.innerHTML = '';
+        if (!tableEl || !elementTemplate) return;
+        tableEl.replaceChildren();
 
         // 7行18列のグリッド用配列を作成
         const rows = 7;
@@ -180,8 +179,8 @@ export function LabView(navigateTo, params = {}) {
         // HTML生成
         for (let p = 0; p < rows; p++) {
             for (let g = 0; g < cols; g++) {
-                const cell = document.createElement('div');
                 const elData = grid[p][g];
+                const cell = elementTemplate.content.firstElementChild.cloneNode(true);
 
                 if (elData) {
                     cell.className = 'element-cell';
@@ -190,11 +189,9 @@ export function LabView(navigateTo, params = {}) {
                         updateInfoPanel(elData);
                     }
 
-                    cell.innerHTML = `
-                        <div class="element-number">${elData.number}</div>
-                        <div class="element-symbol">${elData.symbol}</div>
-                        <div class="element-name">${elData.name}</div>
-                    `;
+                    cell.querySelector('.element-number').textContent = elData.number;
+                    cell.querySelector('.element-symbol').textContent = elData.symbol;
+                    cell.querySelector('.element-name').textContent = elData.name;
 
                     // クリックイベント
                     cell.onclick = () => {
@@ -569,7 +566,7 @@ export function LabView(navigateTo, params = {}) {
                 }
 
                 if (dialog && textEl) {
-                    textEl.innerHTML = completedQuest?.explanationHtml || '実験が完了しました。';
+                    setExplanationContent(textEl, completedQuest?.explanationHtml);
 
                     dialog.style.display = 'block';
 
@@ -606,7 +603,7 @@ export function LabView(navigateTo, params = {}) {
                 const toolbar = container.querySelector('#lab-toolbar');
                 if (toolbar) {
                      // 1. まずツールバーをクリア
-                     toolbar.innerHTML = '';
+                     toolbar.replaceChildren();
 
                      const actions = quest?.toolbarActions || [];
 

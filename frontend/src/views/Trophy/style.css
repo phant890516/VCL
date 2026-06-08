@@ -126,3 +126,13 @@
     color: #90a4ae;
     border: 1px solid #cfd8dc;
 }
+
+.trophy-list-status {
+    text-align: center;
+    padding: 20px;
+    color: #607d8b;
+}
+
+.trophy-list-status.error {
+    color: #c0392b;
+}

@@ -19,6 +19,7 @@ export class ProgressService {
             throw new Error('User ID and experiment code are required');
         }
 
+        // TODO: DB設計が決まったら、ここで進捗状態の種類をDB側と合わせる。
         const normalizedStatus = String(status || 'completed').toLowerCase();
         if (!ALLOWED_STATUSES.has(normalizedStatus)) {
             throw new Error('Invalid progress status');

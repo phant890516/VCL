@@ -15,35 +15,34 @@ export function SelectModeView(navigateTo) {
     container.innerHTML = template;
 
     const listContainer = container.querySelector('#experiment-list-container');
+    const cardTemplate = container.querySelector('#experiment-card-template');
 
-    if (listContainer) {
+    if (listContainer && cardTemplate) {
         // Clear just in case, though it should be empty
-        listContainer.innerHTML = '';
+        listContainer.replaceChildren();
 
         quests.forEach(exp => {
-            const card = document.createElement('div');
-            card.className = 'experiment-card';
-
+            const card = cardTemplate.content.firstElementChild.cloneNode(true);
             const bgStyle = exp.visual?.gradient || 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)';
-
             const isAvailable = exp.available !== false; // デフォルトはtrue
+            const image = card.querySelector('.card-image');
+            const title = card.querySelector('.experiment-title');
+            const materials = card.querySelector('.difficulty-badge');
+            const description = card.querySelector('.experiment-description');
+            const button = card.querySelector('.start-btn');
 
-            // 安全なHTML構築のため、テンプレートリテラルを使用
-            card.innerHTML = `
-                <div class="card-image" style="background: ${bgStyle}; ${!isAvailable ? 'filter: grayscale(100%);' : ''}"></div>
-                <div class="card-content">
-                    <h3>${exp.title}</h3>
-                    <div class="difficulty-badge">使用物質: ${exp.materials}</div>
-                    <p>${exp.desc}</p>
-                    <button class="start-btn"
-                        data-id="${exp.id}"
-                        data-title="${exp.title}"
-                        ${!isAvailable ? 'disabled style="background: #ccc; cursor: not-allowed;"' : ''}
-                    >
-                        ${isAvailable ? '実験開始' : 'Coming Soon'}
-                    </button>
-                </div>
-            `;
+            image.style.background = bgStyle;
+            if (!isAvailable) image.style.filter = 'grayscale(100%)';
+            title.textContent = exp.title;
+            materials.textContent = `使用物質: ${exp.materials}`;
+            description.textContent = exp.desc;
+            button.dataset.id = exp.id;
+            button.dataset.title = exp.title;
+            button.textContent = isAvailable ? '実験開始' : 'Coming Soon';
+            if (!isAvailable) {
+                button.disabled = true;
+                button.classList.add('disabled');
+            }
             listContainer.appendChild(card);
         });
 

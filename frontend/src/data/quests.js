@@ -3,6 +3,12 @@
 // scene/reaction は3D初期状態と共通反応エフェクトに使われる。
 // 対応済みエフェクト: liquidColor, bubbles, precipitate, fadeSolid, dissolveSolid。
 
+import exp01Explanation from './explanations/exp_01.html?raw';
+import exp02Explanation from './explanations/exp_02.html?raw';
+import exp03Explanation from './explanations/exp_03.html?raw';
+import exp04Explanation from './explanations/exp_04.html?raw';
+import exp05Explanation from './explanations/exp_05.html?raw';
+
 // id は exp_01 のように番号だけで統一する。対応表は docs/quest_manual.md に記載。
 export const quests = [
     {
@@ -43,12 +49,7 @@ export const quests = [
             }
         },
         trophyId: 'trophy_exp_01',
-        explanationHtml: `
-            <strong>二酸化マンガン</strong>に<strong>過酸化水素水</strong>を加えると、<strong>酸素</strong>が発生します。<br><br>
-            二酸化マンガンは自分自身は変化せず、過酸化水素水の分解を助ける<strong>触媒</strong>として働きます。<br><br>
-            化学反応式：<br>
-            <span style="font-family: monospace; font-size: 1.3rem; color: #ffeb3b;">2H₂O₂ → 2H₂O + O₂</span>
-        `
+        explanationHtml: exp01Explanation
     },
     {
         id: 'exp_02',
@@ -89,12 +90,7 @@ export const quests = [
             }
         },
         trophyId: 'trophy_exp_02',
-        explanationHtml: `
-            <strong>石灰石</strong>（炭酸カルシウム）に<strong>塩酸</strong>を加えると、<strong>二酸化炭素</strong>が発生します。<br><br>
-            二酸化炭素は泡として出てきます。反応が進むにつれて、石灰石は徐々に溶けていきます。<br><br>
-            化学反応式：<br>
-            <span style="font-family: monospace; font-size: 1.3rem; color: #ffeb3b;">CaCO₃ + 2HCl → CaCl₂ + H₂O + CO₂</span>
-        `
+        explanationHtml: exp02Explanation
     },
     {
         id: 'exp_03',
@@ -135,12 +131,7 @@ export const quests = [
             }
         },
         trophyId: 'trophy_exp_03',
-        explanationHtml: `
-            <strong>アルミニウム</strong>に<strong>塩酸</strong>を加えると、反応して水素が発生し、<strong>塩化アルミニウム</strong>が生成されます。<br><br>
-            実験操作では、混ぜることで反応が進行し、アルミニウム片が溶けていく様子を観察できます。<br><br>
-            化学反応式：<br>
-            <span style="font-family: monospace; font-size: 1.3rem; color: #ffeb3b;">2Al + 6HCl → 2AlCl₃ + 3H₂</span>
-        `
+        explanationHtml: exp03Explanation
     },
     {
         id: 'exp_04',
@@ -179,12 +170,7 @@ export const quests = [
             }
         },
         trophyId: 'trophy_exp_04',
-        explanationHtml: `
-            <strong>石灰水</strong>に<strong>二酸化炭素</strong>を通すと、水に溶けにくい<strong>炭酸カルシウム</strong>ができ、白く濁ります。<br><br>
-            二酸化炭素の確認に使われる代表的な反応です。<br><br>
-            化学反応式：<br>
-            <span style="font-family: monospace; font-size: 1.3rem; color: #ffeb3b;">Ca(OH)₂ + CO₂ → CaCO₃↓ + H₂O</span>
-        `
+        explanationHtml: exp04Explanation
     },
     {
         id: 'exp_05',
@@ -225,12 +211,7 @@ export const quests = [
             }
         },
         trophyId: 'trophy_exp_05',
-        explanationHtml: `
-            <strong>硝酸銀水溶液</strong>に<strong>食塩水（塩化ナトリウム）</strong>を加えると、水に溶けにくい<strong>塩化銀</strong>が生成され、白く沈殿します。<br><br>
-            2種類の水溶液を混ぜて沈殿ができる反応を<strong>沈殿生成反応</strong>といいます。<br><br>
-            化学反応式：<br>
-            <span style="font-family: monospace; font-size: 1.3rem; color: #ffeb3b;">AgNO₃ + NaCl → AgCl↓ + NaNO₃</span>
-        `
+        explanationHtml: exp05Explanation
     }
 ];
 

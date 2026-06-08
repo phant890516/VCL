@@ -8,25 +8,14 @@
  */
 // 実験を選択するダッシュボード（ホーム）シーン
 // ユーザーはこの画面から行いたい実験を選びます。
+import template from './DashboardScene.template.html?raw';
 
 export function DashboardScene(navigateTo) {
   const container = document.createElement('div');
   container.className = 'scene-container dashboard-scene';
-
-  // ヘッダー
-  const header = document.createElement('header');
-  header.className = 'scene-header';
-  const title = document.createElement('h1');
-  title.textContent = '実験室へようこそ';
-  const subtitle = document.createElement('p');
-  subtitle.textContent = '本日の実験を選んでください';
-  header.appendChild(title);
-  header.appendChild(subtitle);
-  container.appendChild(header);
-
-  // 実験リストコンテナ
-  const grid = document.createElement('div');
-  grid.className = 'experiment-grid';
+  container.innerHTML = template;
+  const grid = container.querySelector('#legacy-dashboard-experiment-grid');
+  const cardTemplate = container.querySelector('#legacy-dashboard-card-template');
 
   // サンプル実験データ
   const experiments = [
@@ -55,47 +44,21 @@ export function DashboardScene(navigateTo) {
 
   // 実験カードの生成
   experiments.forEach(exp => {
-    const card = document.createElement('div');
-    card.className = 'experiment-card';
+    const card = cardTemplate.content.firstElementChild.cloneNode(true);
+    const imgArea = card.querySelector('.card-image');
+    const btn = card.querySelector('.start-btn');
 
-    // 画像エリア（プレースホルダー）
-    const imgArea = document.createElement('div');
-    imgArea.className = `card-image ${exp.image}`;
+    imgArea.classList.add(exp.image);
     imgArea.textContent = 'Experiment Image'; // 仮
-    card.appendChild(imgArea);
-
-    // テキストエリア
-    const content = document.createElement('div');
-    content.className = 'card-content';
-
-    const expTitle = document.createElement('h3');
-    expTitle.textContent = exp.title;
-    content.appendChild(expTitle);
-
-    const expDesc = document.createElement('p');
-    expDesc.textContent = exp.description;
-    content.appendChild(expDesc);
-
-    const diff = document.createElement('div');
-    diff.className = 'difficulty-badge';
-    diff.textContent = `難易度: ${exp.difficulty}`;
-    content.appendChild(diff);
-
-    // 開始ボタン
-    const btn = document.createElement('button');
-    btn.className = 'start-btn';
-    btn.textContent = '実験を始める';
+    card.querySelector('.experiment-title').textContent = exp.title;
+    card.querySelector('.experiment-description').textContent = exp.description;
+    card.querySelector('.difficulty-badge').textContent = `難易度: ${exp.difficulty}`;
     btn.onclick = () => {
       // コールバック経由で画面遷移
       if (navigateTo) navigateTo('lab', { experimentId: exp.id });
     };
-    content.appendChild(btn);
-
-    card.appendChild(content);
     grid.appendChild(card);
   });
-
-  container.appendChild(grid);
 
   return container;
 }

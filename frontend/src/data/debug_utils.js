@@ -1,13 +1,6 @@
 export function resetTrophies() {
-    // DBの場合はAPIを叩く必要があるが、デバッグ用としてLocalStorageのみクリアするか、
-    // あるいは全削除エンドポイントを作るか。
-    // ここでは簡易的にコンソールに手順を表示
-    console.warn("To reset DB trophies, run 'DELETE FROM user_trophies;' in SQLite or restart server with fresh DB.");
-}
-
-async function debugResetTrophiesForUser(userId) {
-     try {
-        await fetch(`http://localhost:3000/api/trophies/reset/${userId}`, { method: 'DELETE' });
-        console.log("Reset complete");
-     } catch(e) { console.error(e); }
+    // TODO: ここにDB側のトロフィーリセット処理を書く。
+    // DB実装が決まるまでは、画面側のLocalStorage削除で確認する。
+    localStorage.removeItem('vcl_user_trophies_offline');
+    console.warn('Local trophy cache cleared. DB reset is not implemented yet.');
 }

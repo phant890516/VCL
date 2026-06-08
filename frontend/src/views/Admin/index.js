@@ -1,21 +1,11 @@
 import { resetLocalTrophies } from '../../data/trophies.js';
 import './style.css';
+import template from './template.html?raw';
 
 export function AdminView(navigateTo) {
   const container = document.createElement('div');
   container.classList.add('admin-container');
-
-  container.innerHTML = `
-    <h1>管理者パネル</h1>
-    <div class="admin-card">
-      <h2>データ管理</h2>
-      <p>ユーザーの獲得トロフィーデータをすべて削除します。この操作は取り消せません。</p>
-      <button id="reset-btn" class="danger-btn">データをリセット</button>
-    </div>
-    <div class="admin-actions">
-       <a href="#" id="back-link" class="back-link">トップに戻る</a>
-    </div>
-  `;
+  container.innerHTML = template;
 
   const resetBtn = container.querySelector('#reset-btn');
   if (resetBtn) {

@@ -10,14 +10,12 @@ body, html {
 /* Main Wrapper: Split Layout */
 .register-wrapper {
     display: flex;
-    height: 100vh;
-    width: 100vw;
+    height: 100%;
+    width: 100%;
     font-family: 'Helvetica Neue', Arial, sans-serif;
     overflow: hidden;
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 9999;
+    position: relative;
+    z-index: 1;
     background: #ffffff;
 }
 
@@ -254,6 +252,7 @@ body, html {
 @media (max-width: 900px) {
     .register-wrapper {
         flex-direction: column;
+        height: 100%;
         overflow-y: auto; /* Allow scroll on mobile */
     }
 

@@ -135,3 +135,11 @@
     box-shadow: 0 6px 15px rgba(27, 172, 191, 0.4);
     background: linear-gradient(135deg, #1bacbf 0%, #00d2ff 100%);
 }
+
+.select-mode-scene .start-btn.disabled,
+.select-mode-scene .start-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}

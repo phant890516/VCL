@@ -1,32 +1,14 @@
-const API_BASE = '/api/progress';
 const SCHOOL_API_BASE = '/api/school';
 
 function getStudentToken() {
+    // 生徒JWTがある場合は、学校運用のSupabase保存を優先する。
     return localStorage.getItem('vcl_student_token');
 }
 
-function getCurrentUserId() {
-    try {
-        const user = localStorage.getItem('vcl_user');
-        if (!user) return null;
-        const parsed = JSON.parse(user);
-        return parsed?.id || null;
-    } catch (error) {
-        return null;
-    }
-}
-
 export async function getUserProgress() {
-    const userId = getCurrentUserId();
-    if (!userId) return [];
-
-    const response = await fetch(`${API_BASE}/${userId}`);
-    if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to load progress');
-    }
-
-    return response.json();
+    // TODO: ここに通常ログインユーザーの進捗取得処理を書く。
+    // 生徒ログインの進捗は先生ダッシュボード向けにSupabase側へ保存する。
+    return [];
 }
 
 export async function recordExperimentProgress(experimentCode, status = 'completed') {
@@ -51,20 +33,7 @@ export async function recordExperimentProgress(experimentCode, status = 'complet
         return data.progress;
     }
 
-    const userId = getCurrentUserId();
-    if (!userId || !experimentCode) return null;
-
-    const response = await fetch(API_BASE, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, experimentCode, status })
-    });
-
-    if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to save progress');
-    }
-
-    const data = await response.json();
-    return data.progress;
+    // TODO: ここに通常ログインユーザーの進捗保存処理を書く。
+    // DB実装が決まるまでは、ゲストや通常ログインでは進捗をDB保存しない。
+    return null;
 }

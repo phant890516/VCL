@@ -20,6 +20,7 @@ export function getSupabaseClient() {
     return client;
 }
 
+// 先生アカウントをSupabase Authへ登録する。
 export async function signUpTeacher(email, password, displayName) {
     const supabase = getSupabaseClient();
     const { data, error } = await supabase.auth.signUp({
@@ -36,6 +37,7 @@ export async function signUpTeacher(email, password, displayName) {
     return data;
 }
 
+// 先生ログイン後、バックエンドの先生APIへ渡すアクセストークンを保存する。
 export async function signInTeacher(email, password) {
     const supabase = getSupabaseClient();
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -49,6 +51,7 @@ export async function signInTeacher(email, password) {
     return data;
 }
 
+// Supabase Authからログアウトし、先生API用の保存トークンも消す。
 export async function signOutTeacher() {
     const supabase = getSupabaseClient();
     const { error } = await supabase.auth.signOut();

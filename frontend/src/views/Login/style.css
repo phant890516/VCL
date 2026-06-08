@@ -1,265 +1,432 @@
-/* 全画面リセット */
-body, html {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-}
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap');
 
-/* メインラッパー: 左右分割 */
 .login-wrapper {
-    display: flex;
-    height: 100vh;
-    width: 100vw;
-    font-family: 'Helvetica Neue', Arial, sans-serif;
-    overflow: hidden; /* スクロール防止 */
-    position: fixed; /* 画面全体を覆う (サイドバーも隠す) */
-    top: 0;
-    left: 0;
-    z-index: 9999; /* 最前面に表示 */
-    background: #ffffff; /* 透過防止 */
+    --login-ink: #111827;
+    --login-panel: #f8fbf7;
+    --login-paper: #fffdf5;
+    --login-line: rgba(17, 24, 39, 0.14);
+    --login-muted: #6f756e;
+    --login-cyan: #00a6b4;
+    --login-green: #1fbf75;
+    --login-acid: #d8f442;
+    --login-amber: #f2a900;
+    --login-danger: #c93d2b;
+    width: 100%;
+    height: 100%;
+    max-height: 100vh;
+    min-height: 0;
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    padding: clamp(16px, 3vw, 34px);
+    box-sizing: border-box;
+    font-family: 'IBM Plex Sans JP', 'Yu Gothic', sans-serif;
+    background:
+        linear-gradient(90deg, rgba(17, 24, 39, 0.055) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(17, 24, 39, 0.045) 1px, transparent 1px),
+        radial-gradient(circle at 24% 20%, rgba(216, 244, 66, 0.18), transparent 30%),
+        linear-gradient(135deg, #f7fbf4 0%, #e6f2ef 48%, #f8f2df 100%);
+    background-size: 36px 36px, 36px 36px, auto, auto;
+    isolation: isolate;
 }
 
-/* 左側ビジュアルセクション */
-.login-visual {
-    flex: 6; /* 60% */
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    position: relative;
+.login-wrapper::before {
+    content: '';
+    position: absolute;
+    inset: 18px;
+    pointer-events: none;
+    border: 1px solid rgba(17, 24, 39, 0.12);
+    background:
+        linear-gradient(90deg, transparent 0 48%, rgba(17, 24, 39, 0.08) 48% 52%, transparent 52% 100%) top left / 100% 1px no-repeat,
+        linear-gradient(90deg, transparent 0 48%, rgba(17, 24, 39, 0.08) 48% 52%, transparent 52% 100%) bottom left / 100% 1px no-repeat;
+    z-index: -1;
+}
+
+.login-shell {
+    width: min(1120px, 100%);
+    height: min(680px, 100%);
+    min-height: 560px;
+    display: grid;
+    grid-template-columns: minmax(360px, 1.08fr) minmax(340px, 0.92fr);
+    background: var(--login-paper);
+    border: 1px solid var(--login-line);
+    box-shadow: 0 24px 60px rgba(17, 24, 39, 0.16);
     overflow: hidden;
 }
 
-/* ビジュアルコンテンツ */
-.visual-content {
-    text-align: center;
+.login-visual {
+    position: relative;
+    min-width: 0;
+    padding: clamp(28px, 4vw, 56px);
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    color: #effff7;
+    background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.09) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(255, 255, 255, 0.09) 1px, transparent 1px),
+        linear-gradient(145deg, #102b2c 0%, #0d5757 52%, #093233 100%);
+    background-size: 44px 44px, 44px 44px, auto;
+    overflow: hidden;
+}
+
+.login-visual::before {
+    content: 'H2O2 + MnO2 -> O2';
+    position: absolute;
+    left: clamp(28px, 5vw, 72px);
+    bottom: 34%;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: clamp(42px, 6vw, 88px);
+    font-weight: 700;
+    color: rgba(216, 244, 66, 0.09);
+    white-space: nowrap;
+    transform: rotate(-9deg);
+}
+
+.login-visual::after {
+    content: '';
+    position: absolute;
+    inset: auto -16% -18% auto;
+    width: 58%;
+    aspect-ratio: 1;
+    border: 1px solid rgba(216, 244, 66, 0.28);
+    background:
+        repeating-linear-gradient(90deg, transparent 0 22px, rgba(216, 244, 66, 0.12) 22px 23px),
+        repeating-linear-gradient(0deg, transparent 0 22px, rgba(216, 244, 66, 0.12) 22px 23px);
+    transform: rotate(12deg);
+}
+
+.visual-topline,
+.visual-readouts {
+    position: relative;
     z-index: 2;
-    padding: 2rem;
+    font-family: 'IBM Plex Mono', monospace;
 }
 
-.visual-title {
-    font-size: 6rem;
-    font-weight: 800;
-    margin: 0;
-    letter-spacing: -2px;
-    text-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-
-.visual-subtitle {
-    font-size: 1.5rem;
-    margin-top: 0;
-    margin-bottom: 2rem;
-    font-weight: 300;
-    letter-spacing: 4px;
+.visual-topline {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    color: var(--login-acid);
+    font-size: 0.76rem;
+    letter-spacing: 0;
     text-transform: uppercase;
 }
 
+.visual-content {
+    position: relative;
+    z-index: 2;
+    align-self: center;
+    max-width: 460px;
+}
+
+.visual-kicker,
+.form-kicker {
+    margin: 0 0 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
+.visual-kicker {
+    color: var(--login-acid);
+}
+
+.visual-title {
+    margin: 0;
+    font-size: clamp(2.8rem, 5.4vw, 4.8rem);
+    line-height: 0.95;
+    font-weight: 800;
+    letter-spacing: 0;
+}
+
 .visual-description {
-    font-size: 1.2rem;
-    line-height: 1.8;
+    max-width: 360px;
+    margin: 24px 0 0;
+    color: rgba(239, 255, 247, 0.78);
+    font-size: 1rem;
+    line-height: 1.85;
+}
+
+.molecule-board {
+    position: absolute;
+    top: 20%;
+    right: 10%;
+    width: 220px;
+    height: 200px;
+    z-index: 1;
     opacity: 0.9;
 }
 
-/* 背景装飾（分子イメージ） */
-.visual-decoration .circle {
+.molecule-node,
+.molecule-link {
     position: absolute;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(5px);
+    display: block;
 }
 
-.circle-1 {
-    width: 300px;
-    height: 300px;
-    top: -50px;
-    left: -50px;
-    animation: float 8s infinite ease-in-out;
+.molecule-node {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--login-acid);
+    background: #123c3d;
+    box-shadow: 0 0 0 8px rgba(216, 244, 66, 0.06);
 }
 
-.circle-2 {
-    width: 200px;
-    height: 200px;
-    bottom: 10%;
-    right: 15%;
-    animation: float 10s infinite ease-in-out reverse;
+.node-a { left: 14px; top: 76px; }
+.node-b { left: 82px; top: 24px; }
+.node-c { left: 146px; top: 84px; }
+.node-d { left: 82px; top: 146px; }
+
+.molecule-link {
+    height: 2px;
+    width: 86px;
+    background: rgba(216, 244, 66, 0.55);
+    transform-origin: left center;
 }
 
-.circle-3 {
-    width: 100px;
-    height: 100px;
-    top: 20%;
-    right: 10%;
-    background: rgba(255, 255, 255, 0.2) !important;
-    animation: pulse 4s infinite;
+.link-ab { left: 28px; top: 82px; transform: rotate(-38deg); }
+.link-bc { left: 98px; top: 42px; transform: rotate(42deg); }
+.link-cd { left: 154px; top: 100px; transform: rotate(136deg); }
+
+.visual-readouts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    transform: translateY(-34px);
 }
 
-/* 右側フォームセクション */
+.visual-readouts div {
+    padding: 10px 12px;
+    border: 1px solid rgba(216, 244, 66, 0.22);
+    background: rgba(6, 25, 26, 0.42);
+}
+
+.readout-label {
+    display: block;
+    margin-bottom: 5px;
+    color: rgba(239, 255, 247, 0.58);
+    font-size: 0.68rem;
+}
+
+.visual-readouts strong {
+    color: var(--login-acid);
+    font-size: 0.82rem;
+    letter-spacing: 0;
+}
+
 .login-form-section {
-    flex: 4; /* 40% */
-    background-color: #ffffff !important; /* Force solid white */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-    position: relative;
-    z-index: 2002; /* ビジュアルより手前に */
+    display: grid;
+    place-items: center;
+    min-width: 0;
+    padding: clamp(24px, 4vw, 58px);
+    background:
+        linear-gradient(90deg, rgba(17, 24, 39, 0.045) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(17, 24, 39, 0.035) 1px, transparent 1px),
+        var(--login-panel);
+    background-size: 28px 28px, 28px 28px, auto;
 }
 
 .login-card-modern {
-    width: 100%;
-    max-width: 420px;
-    padding: 3rem;
-    background-color: #ffffff !important; /* Force solid white */
-    border-radius: 20px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.08); /* 影を強調 */
-    border: 1px solid #eee; /* 薄い境界線を追加 */
-    position: relative;
-    z-index: 2003;
+    width: min(390px, 100%);
+    padding: clamp(28px, 4.4vw, 44px);
+    background: rgba(255, 253, 245, 0.9);
+    border: 1px solid rgba(17, 24, 39, 0.18);
+    box-shadow: 10px 10px 0 rgba(17, 24, 39, 0.08);
+}
+
+.form-kicker {
+    color: var(--login-cyan);
 }
 
 .form-header h2 {
-    font-size: 1.8rem;
-    color: #333;
-    margin-bottom: 0.5rem;
+    margin: 0;
+    color: var(--login-ink);
+    font-size: clamp(2.1rem, 4vw, 3rem);
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: 0;
 }
 
 .form-header p {
-    color: #888;
-    margin-top: 0;
-    margin-bottom: 2.5rem;
+    margin: 16px 0 34px;
+    color: var(--login-muted);
+    line-height: 1.75;
 }
 
-/* 入力エリア */
-.input-group {
-    margin-bottom: 1.5rem;
+.login-input-group {
+    margin-bottom: 22px;
     text-align: left;
 }
 
-.input-group label {
+.login-input-group label {
     display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-    color: #555;
-    font-size: 0.9rem;
+    margin-bottom: 8px;
+    color: var(--login-ink);
+    font-size: 0.88rem;
+    font-weight: 700;
 }
 
-.input-wrapper {
+.login-input-wrapper {
     position: relative;
+    display: grid;
+    grid-template-columns: 58px 1fr;
+    align-items: stretch;
+    border: 1px solid rgba(17, 24, 39, 0.22);
+    background: #fffef9;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-.input-icon {
-    position: absolute;
-    left: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 1.2rem;
-    color: #aaa;
+.field-tag {
+    display: grid;
+    place-items: center;
+    border-right: 1px solid rgba(17, 24, 39, 0.18);
+    color: #fffdf5;
+    background: var(--login-ink);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 700;
 }
 
-.input-wrapper input {
+.login-input-wrapper input {
     width: 100%;
-    padding: 15px 15px 15px 50px; /* アイコン分のスペース */
-    border: 2px solid #eee;
-    border-radius: 12px;
-    font-size: 1rem;
+    min-width: 0;
+    min-height: 54px;
+    padding: 0 16px;
+    border: 0;
     box-sizing: border-box;
-    transition: all 0.3s;
-    background: #fdfdfd;
+    color: var(--login-ink);
+    background: transparent;
+    font: 600 0.98rem 'IBM Plex Sans JP', 'Yu Gothic', sans-serif;
 }
 
-.input-wrapper input:focus {
-    border-color: #4facfe;
-    background: white;
+.login-input-wrapper input::placeholder {
+    color: rgba(111, 117, 110, 0.72);
+}
+
+.login-input-wrapper:focus-within {
+    border-color: var(--login-cyan);
+    box-shadow: 0 0 0 4px rgba(0, 166, 180, 0.13);
+    transform: translateY(-1px);
+}
+
+.login-input-wrapper input:focus {
     outline: none;
-    box-shadow: 0 0 0 4px rgba(79, 172, 254, 0.1);
 }
 
 .form-error {
-    color: #e74c3c;
-    font-size: 0.9rem;
-    min-height: 20px;
-    margin-bottom: 1rem;
-    text-align: center;
+    min-height: 22px;
+    margin: 2px 0 18px;
+    color: var(--login-danger);
+    font-size: 0.88rem;
+    font-weight: 700;
+    line-height: 1.6;
 }
 
-.primary-btn {
+.primary-btn.login-btn {
     width: 100%;
-    padding: 16px;
-    background: linear-gradient(to right, #4facfe 0%, #00f2fe 100%);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-size: 1.1rem;
-    font-weight: bold;
+    min-height: 58px;
+    border: 0;
+    color: #111827;
+    background: linear-gradient(90deg, var(--login-acid), #79e57c);
+    box-shadow: 0 10px 0 rgba(17, 24, 39, 0.14);
+    font: 800 1rem 'IBM Plex Sans JP', 'Yu Gothic', sans-serif;
     cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 5px 15px rgba(0, 242, 254, 0.3);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
 }
 
-.primary-btn:hover {
+.primary-btn.login-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 242, 254, 0.4);
+    box-shadow: 0 12px 0 rgba(17, 24, 39, 0.16);
+    filter: saturate(1.08);
 }
 
-.primary-btn:active {
-    transform: translateY(0);
+.primary-btn.login-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 6px 0 rgba(17, 24, 39, 0.16);
+}
+
+.primary-btn.login-btn:disabled {
+    cursor: wait;
+    opacity: 0.68;
+    transform: none;
 }
 
 .form-footer {
-    text-align: center;
-    margin-top: 2rem;
-    color: #666;
+    margin-top: 26px;
+    color: var(--login-muted);
+    text-align: left;
+}
+
+.form-footer p {
+    margin: 0;
+    line-height: 1.7;
 }
 
 .form-footer a {
-    color: #4facfe;
-    text-decoration: none;
-    font-weight: bold;
-}
-
-.form-footer a:hover {
+    color: var(--login-cyan);
+    font-weight: 800;
     text-decoration: underline;
+    text-underline-offset: 4px;
 }
 
-/* アニメーション */
-@keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-20px); }
-}
-
-@keyframes pulse {
-    0% { transform: scale(1); opacity: 0.5; }
-    50% { transform: scale(1.1); opacity: 0.8; }
-    100% { transform: scale(1); opacity: 0.5; }
-}
-
-/* レスポンシブ: スマホでは縦並び */
-@media (max-width: 768px) {
+@media (max-width: 980px) {
     .login-wrapper {
-        flex-direction: column;
+        padding: 18px;
+        overflow: auto;
+        place-items: start center;
+    }
+
+    .login-wrapper::before {
+        inset: 10px;
+    }
+
+    .login-shell {
+        min-height: auto;
         height: auto;
-        min-height: 100vh;
+        grid-template-columns: 1fr;
     }
 
     .login-visual {
-        flex: none;
-        height: 40vh;
-        min-height: 300px;
+        min-height: 340px;
     }
 
-    .visual-title {
-        font-size: 4rem;
+    .molecule-board {
+        top: 18%;
+        right: 4%;
+        transform: scale(0.78);
+        transform-origin: top right;
+    }
+}
+
+@media (max-width: 560px) {
+    .login-wrapper {
+        padding: 12px;
     }
 
+    .login-visual,
     .login-form-section {
-        flex: 1;
-        padding: 1.5rem;
+        padding: 24px;
+    }
+
+    .visual-readouts {
+        grid-template-columns: 1fr;
+    }
+
+    .molecule-board {
+        opacity: 0.4;
     }
 
     .login-card-modern {
         box-shadow: none;
-        padding: 0;
-        background: transparent;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .login-input-wrapper,
+    .primary-btn.login-btn {
+        transition: none;
     }
 }

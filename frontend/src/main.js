@@ -26,7 +26,7 @@ function wrapView(ViewFunction) {
     return (params) => {
         const contentRoot = document.getElementById('content-root');
         if (contentRoot) {
-            contentRoot.innerHTML = '';
+            contentRoot.replaceChildren();
             const viewElement = ViewFunction(navigateTo, params);
             if (viewElement) {
                 contentRoot.appendChild(viewElement);
@@ -38,7 +38,7 @@ function wrapView(ViewFunction) {
 function renderResult(params) {
     const contentRoot = document.getElementById('content-root');
     if (contentRoot) {
-        contentRoot.innerHTML = '';
+        contentRoot.replaceChildren();
         contentRoot.appendChild(ResultScene(navigateTo, params));
     }
 }
@@ -78,6 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const pathMap = {
             'home': '/dashboard',
             'quest': '/select-mode',
+            'login': '/login',
             'idea': '/idea',
             'live': '/live',
             'trophy': '/trophy',

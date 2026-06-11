@@ -5,6 +5,8 @@
 Nintendo Joy-Con を実験器具の代わりとして使い、PC のブラウザ上で 3D の化学実験を安全に体験できる学習アプリです。
 
 ---
+宣伝動画</br>
+https://youtu.be/icWVBrmFyOg?si=i6Fk4xv7SfaDbfM0
 
 ## 📖 概要
 
